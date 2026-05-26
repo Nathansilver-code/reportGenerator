@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!--
+  base.html — Master layout template
+  All other templates extend this file using Jinja2 extends / block
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Primary School Marksheet System{% endblock %}</title>
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/css.css') }}">
+  
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<nav class="navbar">
+  <a href="{{ url_for('marks.select_class') }}" class="navbar-brand">
+    PrimaryTrack <span>| Uganda</span>
+  </a>
+  <div class="nav-links">
+    <a href="{{ url_for('marks.select_class') }}"  class="nav-link">➕ Enter Marks</a>
+    <a href="{{ url_for('marks.list_students') }}"  class="nav-link">👥 Students</a>
+    <a href="{{ url_for('reports.reports_home') }}" class="nav-link">📊 Reports</a>
+    <a href="{{ url_for('auth.logout') }}"          class="nav-link btn-accent">Logout ({{ current_user.full_name.split()[0] }})</a>
+  </div>
+</nav>
+{% endif %}
+
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="alert-container">
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        {% if category == 'success' %}✔{% elif category == 'danger' %}✖{% elif category == 'warning' %}⚠{% else %}ℹ{% endif %}
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+
+{% block content %}{% endblock %}
+
+<footer>
+  &copy;  2026  Primary School Marksheet System &nbsp;|&nbsp; Built for Uganda Primary Schools
+</footer>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

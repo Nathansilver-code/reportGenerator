@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Register Student — {{ class_name }} | PrimaryTrack{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+  <div style="max-width:600px; margin:0 auto;">
+
+    
+    <div class="text-muted mb-1" style="font-size:0.85rem;">
+      <a href="{{ url_for('marks.select_class') }}" style="color:var(--primary);">← Change Class</a>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+      <div style="background:var(--primary); color:var(--accent); border-radius:var(--radius);
+                  padding:0.6rem 1.1rem; font-weight:700; font-size:1.4rem;">
+        {{ class_name }}
+      </div>
+      <div>
+        <h1 style="font-family:'Merriweather',serif; color:var(--primary); font-size:1.3rem; margin:0;">
+          Learner Registration
+        </h1>
+        <p class="text-muted">{{ term }} &nbsp;|&nbsp; Enter marks out of 100 per subject</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">📋 Student Details &amp; Marks</h2>
+
+      <form method="POST" action="{{ url_for('marks.register_student') }}">
+        
+        <input type="hidden" name="class_name" value="{{ class_name }}" />
+        <input type="hidden" name="term"       value="{{ term }}" />
+
+        
+        <div class="form-group">
+          <label class="form-label" for="full_name">Learner's Full Name</label>
+          <input type="text" id="full_name" name="full_name" class="form-control"
+                 placeholder="e.g. Mugisha Robert" required />
+        </div>
+
+        
+        <div style="margin-top:1.25rem; margin-bottom:0.5rem;">
+          <p style="font-weight:600; color:var(--primary);">📝 Subject Marks (0 – 100)</p>
+        </div>
+        <div class="grid-2">
+
+          <div class="form-group">
+            <label class="form-label" for="english">
+              English Language
+              <span class="text-muted" style="font-weight:400;">/100</span>
+            </label>
+            <input type="number" id="english" name="english" class="form-control"
+                   min="0" max="100" step="0.5" placeholder="0 – 100" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="math">
+              Mathematics
+              <span class="text-muted" style="font-weight:400;">/100</span>
+            </label>
+            <input type="number" id="math" name="math" class="form-control"
+                   min="0" max="100" step="0.5" placeholder="0 – 100" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="science">
+              Science
+              <span class="text-muted" style="font-weight:400;">/100</span>
+            </label>
+            <input type="number" id="science" name="science" class="form-control"
+                   min="0" max="100" step="0.5" placeholder="0 – 100" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="sst">
+              Social Studies (SST)
+              <span class="text-muted" style="font-weight:400;">/100</span>
+            </label>
+            <input type="number" id="sst" name="sst" class="form-control"
+                   min="0" max="100" step="0.5" placeholder="0 – 100" required />
+          </div>
+
+        </div>
+
+        
+        <div style="background:var(--light); border-radius:var(--radius); padding:0.8rem 1rem;
+                    display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+          <span class="text-muted">Estimated Total</span>
+          <span id="total-preview" style="font-size:1.3rem; font-weight:700; color:var(--primary);">—</span>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center;">
+            ✔ Submit &amp; Add Another
+          </button>
+          <a href="{{ url_for('marks.list_students', class_name=class_name, term=term) }}"
+             class="btn btn-outline">View Class</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  
+  const subjects = ['english', 'math', 'science', 'sst'];
+  const preview  = document.getElementById('total-preview');
+
+  function updateTotal() {
+    let total = 0;
+    let allFilled = true;
+    subjects.forEach(function(id) {
+      const val = parseFloat(document.getElementById(id).value);
+      if (isNaN(val)) { allFilled = false; }
+      else { total += val; }
+    });
+    preview.textContent = allFilled ? total.toFixed(1) + ' / 400' : '—';
+    // Colour hint: green if all filled
+    preview.style.color = allFilled ? 'var(--success)' : 'var(--primary)';
+  }
+
+  subjects.forEach(function(id) {
+    document.getElementById(id).addEventListener('input', updateTotal);
+  });
+</script>
+{% endblock %}

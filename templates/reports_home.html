@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Reports — PrimaryTrack{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+  <div style="max-width:560px; margin:0 auto;">
+
+    <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin-bottom:0.3rem;">
+      📊 Marksheets &amp; Reports
+    </h1>
+    <p class="text-muted mb-1">Select a class and term to view or print.</p>
+
+    <div class="card mt-2">
+      <h2 class="card-title">Generate Marksheet</h2>
+      <form method="GET" action="{{ url_for('reports.marksheet') }}">
+        <div class="form-group">
+          <label class="form-label" for="class_name">Class</label>
+          <select id="class_name" name="class_name" class="form-control" required>
+            <option value="" disabled selected>— Select Class —</option>
+            {% for cls in classes %}
+            <option value="{{ cls }}">{{ cls }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="term">Term</label>
+          <select id="term" name="term" class="form-control">
+            {% for t in terms %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+          View Marksheet &rarr;
+        </button>
+      </form>
+    </div>
+
+    <div class="card" style="background:#fffde7; border:1px solid var(--accent);">
+      <p style="font-weight:600; margin-bottom:0.5rem;">💡 Tip</p>
+      <p class="text-muted">
+        From the marksheet you can print the full class list. To print an individual
+        report card, click the <strong>📄 Report</strong> button next to any student's name.
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

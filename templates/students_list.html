@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Students — PrimaryTrack{% endblock %}
+
+{% block content %}
+
+<div class="main-content">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+      <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin:0;">Students</h1>
+      <p class="text-muted">All learners you have registered</p>
+    </div>
+    <a href="{{ url_for('marks.select_class') }}" class="btn btn-primary">➕ Add Student</a>
+  </div>
+
+  
+  <div class="card" style="padding:1.2rem;">
+    <form method="GET" action="{{ url_for('marks.list_students') }}"
+          style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+      <div class="form-group" style="margin:0; flex:1; min-width:120px;">
+        <label class="form-label">Filter by Class</label>
+        <select name="class_name" class="form-control">
+          <option value="">All Classes</option>
+          {% for cls in classes %}
+          <option value="{{ cls }}" {% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0; flex:1; min-width:120px;">
+        <label class="form-label">Filter by Term</label>
+        <select name="term" class="form-control">
+          <option value="">All Terms</option>
+          {% for t in terms %}
+          <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-outline">Filter</button>
+      <a href="{{ url_for('marks.list_students') }}" class="btn btn-outline">Clear</a>
+    </form>
+  </div>
+
+  
+  {% if students %}
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h2 class="card-title" style="margin:0; border:none; padding:0;">
+        {{ students|length }} Learner{{ 's' if students|length != 1 else '' }}
+      </h2>
+      {% if selected_class %}
+      <div style="display:flex; gap:0.5rem;">
+        <a href="{{ url_for('reports.marksheet', class_name=selected_class, term=selected_term or 'Term 1') }}"
+           class="btn btn-primary btn-sm">📊 View Marksheet</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Class</th>
+            <th>Term</th>
+            <th>English</th>
+            <th>Math</th>
+            <th>Science</th>
+            <th>SST</th>
+            <th>Total</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td style="font-weight:600;">{{ student.full_name }}</td>
+            <td>{{ student.class_name }}</td>
+            <td>{{ student.term }}</td>
+            {% if student.marks %}
+            <td>{{ student.marks.english }}</td>
+            <td>{{ student.marks.math }}</td>
+            <td>{{ student.marks.science }}</td>
+            <td>{{ student.marks.sst }}</td>
+            <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
+            {% else %}
+            <td colspan="5" class="text-muted text-center">No marks recorded</td>
+            {% endif %}
+            <td>
+              <div style="display:flex; gap:0.4rem;">
+                <a href="{{ url_for('reports.report_card', student_id=student.id) }}"
+                   class="btn btn-outline btn-sm">📄 Report</a>
+                
+                <form method="POST"
+                      action="{{ url_for('marks.delete_student', student_id=student.id) }}"
+                      onsubmit="return confirm('Delete {{ student.full_name }}? This cannot be undone.');"
+                      style="margin:0;">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="card" style="text-align:center; padding:3rem;">
+    <div style="font-size:3rem; margin-bottom:1rem;">📭</div>
+    <p style="color:var(--muted); font-size:1.05rem;">
+      No students found. Use the filter above or
+      <a href="{{ url_for('marks.select_class') }}" style="color:var(--primary);">add some learners</a>.
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+
+from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask_login import login_required, current_user
+from extensions import db
+from models import Student, Mark
+
+marks_bp = Blueprint("marks", __name__)
+
+# The seven Uganda primary classes
+PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
+TERMS           = ["Term 1", "Term 2", "Term 3"]
+
+
+
+@marks_bp.route("/select-class", methods=["GET", "POST"])
+@login_required
+def select_class():
+    if request.method == "POST":
+        selected_class = request.form.get("class_name")
+        selected_term  = request.form.get("term")
+
+        if selected_class not in PRIMARY_CLASSES:
+            flash("Please select a valid class.", "danger")
+            return render_template("select_class.html",
+                                   classes=PRIMARY_CLASSES, terms=TERMS)
+
+        # Pass selection to the registration form via URL parameters
+        return redirect(url_for("marks.register_student",
+                                class_name=selected_class,
+                                term=selected_term))
+
+    return render_template("select_class.html", classes=PRIMARY_CLASSES, terms=TERMS)
+
+
+@marks_bp.route("/register-student", methods=["GET", "POST"])
+@login_required
+def register_student():
+    class_name = request.args.get("class_name") or request.form.get("class_name")
+    term       = request.args.get("term")       or request.form.get("term", "Term 1")
+
+    if not class_name:
+        flash("No class selected. Please start again.", "warning")
+        return redirect(url_for("marks.select_class"))
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        try:
+            english = float(request.form.get("english", 0))
+            math    = float(request.form.get("math",    0))
+            science = float(request.form.get("science", 0))
+            sst     = float(request.form.get("sst",     0))
+        except ValueError:
+            flash("Please enter valid numeric marks.", "danger")
+            return render_template("register_student.html",
+                                   class_name=class_name, term=term)
+
+        # Validate mark ranges (0–100)
+        for subject, mark in [("English", english), ("Math", math),
+                               ("Science", science), ("SST", sst)]:
+            if not (0 <= mark <= 100):
+                flash(f"{subject} mark must be between 0 and 100.", "danger")
+                return render_template("register_student.html",
+                                       class_name=class_name, term=term)
+
+        if not full_name:
+            flash("Student name is required.", "danger")
+            return render_template("register_student.html",
+                                   class_name=class_name, term=term)
+
+        # Save student record
+        from datetime import datetime
+        student = Student(
+            full_name  = full_name,
+            class_name = class_name,
+            term       = term,
+            year       = datetime.utcnow().year,
+            teacher_id = current_user.id
+        )
+        db.session.add(student)
+        db.session.flush()          # Get student.id before committing
+
+        # Save associated marks
+        mark_record = Mark(
+            student_id = student.id,
+            english    = english,
+            math       = math,
+            science    = science,
+            sst        = sst
+        )
+        db.session.add(mark_record)
+        db.session.commit()
+
+        flash(f"✔ {full_name} registered successfully!", "success")
+        # Allow teacher to add another student in the same class
+        return redirect(url_for("marks.register_student",
+                                class_name=class_name, term=term))
+
+    return render_template("register_student.html",
+                           class_name=class_name, term=term)
+
+
+@marks_bp.route("/students")
+@login_required
+def list_students():
+    class_name = request.args.get("class_name")
+    term       = request.args.get("term")
+
+    query = Student.query.filter_by(teacher_id=current_user.id)
+    if class_name:
+        query = query.filter_by(class_name=class_name)
+    if term:
+        query = query.filter_by(term=term)
+
+    students = query.order_by(Student.class_name, Student.full_name).all()
+    return render_template("students_list.html",
+                           students=students,
+                           classes=PRIMARY_CLASSES,
+                           terms=TERMS,
+                           selected_class=class_name,
+                           selected_term=term)
+
+
+@marks_bp.route("/delete-student/<int:student_id>", methods=["POST"])
+@login_required
+def delete_student(student_id):
+    student = Student.query.filter_by(
+        id=student_id, teacher_id=current_user.id
+    ).first_or_404()
+
+    class_name = student.class_name
+    term       = student.term
+
+    if student.marks:
+        db.session.delete(student.marks)
+    db.session.delete(student)
+    db.session.commit()
+
+    flash(f"Student record deleted.", "info")
+    return redirect(url_for("marks.list_students",
+                            class_name=class_name, term=term))

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Login — PrimaryTrack{% endblock %}
+
+{% block content %}
+
+<div style="min-height:90vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
+  <div style="width:100%; max-width:900px;">
+
+    
+    <div style="text-align:center; margin-bottom:2rem;">
+      <div style="font-size:3rem;">🏫</div>
+      <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin:0.5rem 0 0.25rem;">
+        PrimaryTrack
+      </h1>
+      <p style="color:var(--muted); font-size:0.95rem;">
+        Primary School Marksheet &amp; Report Card System &mdash; Uganda
+      </p>
+    </div>
+
+    <div class="grid-2">
+
+      
+      <div class="card" style="padding:2rem;">
+        <h2 class="card-title">🔐 Teacher Login</h2>
+        <p class="text-muted mb-1">Already registered? Sign in below.</p>
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control"
+                   placeholder="you@school.ac.ug" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="••••••••" required />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:0.5rem;">
+            Sign In &rarr;
+          </button>
+        </form>
+      </div>
+
+      <div class="card" style="background:var(--primary); color:var(--white); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:2.5rem;">
+        <div style="font-size:2.5rem; margin-bottom:1rem;">👋</div>
+        <h2 style="font-family:'Merriweather',serif; margin-bottom:0.75rem; color:var(--accent);">
+          New Teacher?
+        </h2>
+        <p style="opacity:0.9; line-height:1.7; margin-bottom:1.5rem;">
+          Create a free account to start entering marks, generating marksheets,
+          and printing report cards for your learners.
+        </p>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-accent" style="font-size:1rem; padding:0.7rem 2rem;">
+          Create Account
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

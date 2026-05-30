@@ -106,6 +106,32 @@ On first run, `db.create_all()` automatically creates all tables.
 
 ---
 
+<<<<<<< HEAD
+=======
+## Grading System (Uganda Primary, UNEB)
+
+| Grade | Percentage | Aggregate | Meaning    |
+|-------|-----------|-----------|------------|
+| D1    | 80–100 %  | 1         | Excellent  |
+| D2    | 70–79 %   | 2         | Very Good  |
+| C3    | 60–69 %   | 3         | Good       |
+| C4    | 50–59 %   | 4         | Fair       |
+| P5    | 40–49 %   | 5         | Pass       |
+| P6    | 30–39 %   | 6         | Weak Pass  |
+| F7    | 0–29 %    | 7         | Fail       |
+
+**Division** is based on the **sum of all four subject aggregates** (lower = better):
+
+| Aggregate Sum | Division   |
+|--------------|-----------|
+| 4–8          | Division 1 |
+| 9–16         | Division 2 |
+| 17–24        | Division 3 |
+| 25–28        | Division 4 |
+| 29+          | Ungraded   |
+
+---
+>>>>>>> 552e9e81cb63452b0e8f79c5c9e347d7571dd5f1
 
 ## User Workflow
 

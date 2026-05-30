@@ -37,11 +37,6 @@ def create_app():
     return app
 
 
-<<<<<<< HEAD
-if __name__ == "__main__":
-    app = create_app()
-    app.run(debug=True)          
-=======
 import os
 
 app = create_app()
@@ -52,7 +47,6 @@ if __name__ == "__main__":
 
 
 
->>>>>>> 552e9e81cb63452b0e8f79c5c9e347d7571dd5f1
 
 
 

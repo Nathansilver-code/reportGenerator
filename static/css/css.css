@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 
-    /* =====================================================
-       Global Variables & Reset
-    ===================================================== */
     :root {
       --primary:      #1a6e3c;   /* Uganda green */
       --primary-dark: #134f2c;
@@ -30,9 +26,6 @@
       min-height: 100vh;
     }
 
-    /* =====================================================
-       Navigation Bar
-    ===================================================== */
     .navbar {
       background: var(--primary);
       padding: 0 2rem;
@@ -95,9 +88,7 @@
     ===================================================== */
     .main-content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
 
-    /* =====================================================
-       Cards
-    ===================================================== */
+   
     .card {
       background: var(--white);
       border-radius: var(--radius);
@@ -114,9 +105,7 @@
       border-bottom: 2px solid var(--accent);
     }
 
-    /* =====================================================
-       Forms
-    ===================================================== */
+   
     .form-group { margin-bottom: 1.1rem; }
     .form-label { display: block; font-weight: 600; margin-bottom: 0.35rem; font-size: 0.9rem; color: var(--text); }
     .form-control {
@@ -136,9 +125,7 @@
     }
     select.form-control { cursor: pointer; }
 
-    /* =====================================================
-       Buttons
-    ===================================================== */
+   
     .btn {
       display: inline-flex;
       align-items: center;
@@ -167,9 +154,7 @@
     .btn-outline:hover { background: var(--primary); color: var(--white); }
     .btn-sm { padding: 0.35rem 0.85rem; font-size: 0.82rem; }
 
-    /* =====================================================
-       Tables
-    ===================================================== */
+   
     .table-wrapper { overflow-x: auto; }
     table {
       width: 100%;
@@ -478,5 +463,3 @@
       border-top: 1px solid var(--border);
       margin-top: 3rem;
     }
->>>>>>> 552e9e81cb63452b0e8f79c5c9e347d7571dd5f1
-  

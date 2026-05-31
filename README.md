@@ -12,7 +12,7 @@ report cards for Uganda primary schools (P1–P7).
 |---|---|
 | Teacher Auth | Register / login with hashed passwords |
 | Mark Entry | Enter English, Maths, Science, SST marks (0–100) per learner |
-| Uganda Grading | D1–F7 grades + aggregate points per subject |
+| Uganda Grading |
 | Marksheet | Full class table with position, aggregate sum, division |
 | Report Card | Printable individual report with comment |
 | Print Support | Browser print button produces clean A4 output |
@@ -106,54 +106,4 @@ On first run, `db.create_all()` automatically creates all tables.
 
 ---
 
-<<<<<<< HEAD
-=======
-## Grading System (Uganda Primary, UNEB)
 
-| Grade | Percentage | Aggregate | Meaning    |
-|-------|-----------|-----------|------------|
-| D1    | 80–100 %  | 1         | Excellent  |
-| D2    | 70–79 %   | 2         | Very Good  |
-| C3    | 60–69 %   | 3         | Good       |
-| C4    | 50–59 %   | 4         | Fair       |
-| P5    | 40–49 %   | 5         | Pass       |
-| P6    | 30–39 %   | 6         | Weak Pass  |
-| F7    | 0–29 %    | 7         | Fail       |
-
-**Division** is based on the **sum of all four subject aggregates** (lower = better):
-
-| Aggregate Sum | Division   |
-|--------------|-----------|
-| 4–8          | Division 1 |
-| 9–16         | Division 2 |
-| 17–24        | Division 3 |
-| 25–28        | Division 4 |
-| 29+          | Ungraded   |
-
----
->>>>>>> 552e9e81cb63452b0e8f79c5c9e347d7571dd5f1
-
-## User Workflow
-
-```
-1. Teacher visits http://localhost:5000
-2. Registers (new) OR logs in (existing)
-3. Clicks "Enter Marks" → selects class (P1–P7) and term
-4. Fills in learner name + marks in 4 subjects → Submit
-   (Can add more learners without leaving the page)
-5. To view the class marksheet:
-   → "Reports" → choose class & term → View Marksheet
-   → Click "Print Marksheet" for A4 hardcopy
-6. To view an individual report card:
-   → "Students" → click "📄 Report" next to any learner
-   → Click "Print Report Card" for A4 hardcopy
-```
-
----
-
-## Deployment Notes
-
-- Set `debug=False` in `app.py` for production
-- Use **Gunicorn**: `gunicorn "app:create_app()"`
-- Set a strong `SECRET_KEY` in `.env`
-- Use **Nginx** as a reverse proxy in front of Gunicorn

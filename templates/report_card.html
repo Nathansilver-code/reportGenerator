@@ -3,7 +3,6 @@
 
 {% block extra_css %}
 <style>
-  
   .report-card {
     max-width: 720px;
     margin: 0 auto;
@@ -14,7 +13,6 @@
     box-shadow: var(--shadow);
   }
 
-  
   .rc-banner {
     background: var(--primary);
     color: var(--white);
@@ -24,7 +22,6 @@
   .rc-banner h1 { font-family:'Merriweather',serif; font-size:1.4rem; margin:0 0 0.2rem; color:var(--accent); }
   .rc-banner p  { opacity:0.9; font-size:0.88rem; margin:0; }
 
-  /* Decorative stripe: red | yellow | red */
   .rc-stripe {
     height: 10px;
     background: linear-gradient(to right, #c0392b 33%, #f5c518 33%, #f5c518 66%, #c0392b 66%);
@@ -43,7 +40,6 @@
     margin-bottom: 0.85rem;
   }
 
-  /* Student info row grid */
   .info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -52,14 +48,12 @@
   .info-cell label { font-size:0.78rem; color:var(--muted); display:block; margin-bottom:0.15rem; }
   .info-cell span  { font-weight:600; font-size:0.95rem; }
 
-  
   .rc-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
   .rc-table th { background:var(--primary); color:var(--white); padding:0.55rem 0.75rem; text-align:left; }
   .rc-table td { padding:0.55rem 0.75rem; border-bottom:1px solid var(--border); }
   .rc-table tr:last-child td { border-bottom:none; }
   .rc-table tr:nth-child(even) { background:#f8fffe; }
 
-  
   .rc-summary {
     background: var(--primary);
     color: var(--white);
@@ -73,7 +67,6 @@
   .rc-summary .val { font-size:1.4rem; font-weight:700; color:var(--accent); }
   .rc-summary .lbl { font-size:0.78rem; opacity:0.85; }
 
-  /* Comment box */
   .rc-comment {
     background: #f9fbe7;
     border-left: 4px solid var(--accent);
@@ -114,7 +107,6 @@
 
 <div class="main-content">
 
-  <!-- Action buttons (hidden when printing) -->
   <div class="no-print" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
     <button onclick="window.print()" class="btn btn-accent">🖨 Print Report Card</button>
     <a href="{{ url_for('reports.marksheet', class_name=student.class_name, term=student.term) }}"
@@ -124,7 +116,6 @@
 
   <div class="report-card">
 
-    
     <div class="rc-banner">
       <h1>🏫 PRIMARY SCHOOL PROGRESS REPORT</h1>
       <p>Academic Year {{ student.year }} &nbsp;|&nbsp; {{ student.term }}</p>
@@ -133,7 +124,7 @@
 
     <div class="rc-body">
 
-      
+      <!-- Student info -->
       <div class="rc-section">
         <div class="rc-section-title">Student Information</div>
         <div class="info-grid">
@@ -164,7 +155,7 @@
         </div>
       </div>
 
-      
+      <!-- Subjects table -->
       <div class="rc-section">
         <div class="rc-section-title">Academic Performance</div>
         <table class="rc-table">
@@ -193,12 +184,12 @@
         </table>
       </div>
 
-      
+      <!-- Summary bar -->
       <div class="rc-section">
         <div class="rc-summary">
           <div>
             <div class="val">{{ computed.total }}</div>
-            <div class="lbl">Total Marks / 400</div>
+            <div class="lbl">Total Marks / {{ computed.max_total }}</div>
           </div>
           <div>
             <div class="val">{{ computed.aggregate_sum }}</div>
@@ -211,7 +202,7 @@
         </div>
       </div>
 
-      
+      <!-- Comment -->
       <div class="rc-section">
         <div class="rc-section-title">Class Teacher's Comment</div>
         <div class="rc-comment">
@@ -219,8 +210,7 @@
         </div>
       </div>
 
-    
-
+      <!-- Signatures -->
       <div class="signature-row">
         <div class="sig-line">Class Teacher's Signature &amp; Date</div>
         <div class="sig-line">Head Teacher's Signature &amp; Date</div>

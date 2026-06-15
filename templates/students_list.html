@@ -13,7 +13,7 @@
     <a href="{{ url_for('marks.select_class') }}" class="btn btn-primary">➕ Add Student</a>
   </div>
 
-  
+  <!-- Filter bar -->
   <div class="card" style="padding:1.2rem;">
     <form method="GET" action="{{ url_for('marks.list_students') }}"
           style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
@@ -40,8 +40,15 @@
     </form>
   </div>
 
-  
   {% if students %}
+
+  {# Determine if ALL visible students are lower primary (to decide column headers).
+     If the list is mixed classes, each row renders its own subjects inline. #}
+  {% set lower_classes = ["P1", "P2", "P3"] %}
+  {% set is_lower_view = selected_class in lower_classes %}
+  {% set is_upper_view = selected_class and selected_class not in lower_classes %}
+  {% set is_mixed      = not selected_class %}
+
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
       <h2 class="card-title" style="margin:0; border:none; padding:0;">
@@ -63,35 +70,85 @@
             <th>Full Name</th>
             <th>Class</th>
             <th>Term</th>
-            <th>English</th>
-            <th>Math</th>
-            <th>Science</th>
-            <th>SST</th>
-            <th>Total</th>
+
+            {% if is_lower_view %}
+              <th>Lit A</th>
+              <th>Lit B</th>
+              <th>English</th>
+              <th>Math</th>
+              <th>Luganda</th>
+              <th>R.E.</th>
+              <th>Total /600</th>
+            {% elif is_upper_view %}
+              <th>English</th>
+              <th>Math</th>
+              <th>Science</th>
+              <th>SST</th>
+              <th>Total /400</th>
+            {% else %}
+              <!-- Mixed: show a single Subjects summary column -->
+              <th>Subjects Summary</th>
+              <th>Total</th>
+            {% endif %}
+
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for student in students %}
+          {% set s_lower = student.class_name in lower_classes %}
           <tr>
             <td>{{ loop.index }}</td>
             <td style="font-weight:600;">{{ student.full_name }}</td>
             <td>{{ student.class_name }}</td>
             <td>{{ student.term }}</td>
+
             {% if student.marks %}
-            <td>{{ student.marks.english }}</td>
-            <td>{{ student.marks.math }}</td>
-            <td>{{ student.marks.science }}</td>
-            <td>{{ student.marks.sst }}</td>
-            <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
+              {% if is_lower_view %}
+                <td>{{ student.marks.lit_a }}</td>
+                <td>{{ student.marks.lit_b }}</td>
+                <td>{{ student.marks.english }}</td>
+                <td>{{ student.marks.math }}</td>
+                <td>{{ student.marks.lug }}</td>
+                <td>{{ student.marks.re }}</td>
+                <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
+
+              {% elif is_upper_view %}
+                <td>{{ student.marks.english }}</td>
+                <td>{{ student.marks.math }}</td>
+                <td>{{ student.marks.science }}</td>
+                <td>{{ student.marks.sst }}</td>
+                <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
+
+              {% else %}
+                <!-- Mixed view: compact summary -->
+                <td class="text-muted" style="font-size:0.85rem;">
+                  {% if s_lower %}
+                    Lit A: {{ student.marks.lit_a }},
+                    Lit B: {{ student.marks.lit_b }},
+                    Eng: {{ student.marks.english }},
+                    Math: {{ student.marks.math }},
+                    Lug: {{ student.marks.lug }},
+                    R.E: {{ student.marks.re }}
+                  {% else %}
+                    Eng: {{ student.marks.english }},
+                    Math: {{ student.marks.math }},
+                    Sci: {{ student.marks.science }},
+                    SST: {{ student.marks.sst }}
+                  {% endif %}
+                </td>
+                <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
+              {% endif %}
+
             {% else %}
-            <td colspan="5" class="text-muted text-center">No marks recorded</td>
+              <td colspan="{% if is_lower_view %}7{% elif is_upper_view %}5{% else %}2{% endif %}"
+                  class="text-muted text-center">No marks recorded</td>
             {% endif %}
+
             <td>
               <div style="display:flex; gap:0.4rem;">
                 <a href="{{ url_for('reports.report_card', student_id=student.id) }}"
                    class="btn btn-outline btn-sm">📄 Report</a>
-                
                 <form method="POST"
                       action="{{ url_for('marks.delete_student', student_id=student.id) }}"
                       onsubmit="return confirm('Delete {{ student.full_name }}? This cannot be undone.');"

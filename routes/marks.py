@@ -1,15 +1,12 @@
-
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from extensions import db
-from models import Student, Mark
+from models import Student, Mark, LOWER_PRIMARY_CLASSES
 
 marks_bp = Blueprint("marks", __name__)
 
-# The seven Uganda primary classes
 PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
-
 
 
 @marks_bp.route("/select-class", methods=["GET", "POST"])
@@ -24,7 +21,6 @@ def select_class():
             return render_template("select_class.html",
                                    classes=PRIMARY_CLASSES, terms=TERMS)
 
-        # Pass selection to the registration form via URL parameters
         return redirect(url_for("marks.register_student",
                                 class_name=selected_class,
                                 term=selected_term))
@@ -42,32 +38,54 @@ def register_student():
         flash("No class selected. Please start again.", "warning")
         return redirect(url_for("marks.select_class"))
 
+    is_lower = class_name in LOWER_PRIMARY_CLASSES
+
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
-        try:
-            english = float(request.form.get("english", 0))
-            math    = float(request.form.get("math",    0))
-            science = float(request.form.get("science", 0))
-            sst     = float(request.form.get("sst",     0))
-        except ValueError:
-            flash("Please enter valid numeric marks.", "danger")
-            return render_template("register_student.html",
-                                   class_name=class_name, term=term)
-
-        # Validate mark ranges (0–100)
-        for subject, mark in [("English", english), ("Math", math),
-                               ("Science", science), ("SST", sst)]:
-            if not (0 <= mark <= 100):
-                flash(f"{subject} mark must be between 0 and 100.", "danger")
-                return render_template("register_student.html",
-                                       class_name=class_name, term=term)
 
         if not full_name:
             flash("Student name is required.", "danger")
             return render_template("register_student.html",
-                                   class_name=class_name, term=term)
+                                   class_name=class_name, term=term,
+                                   is_lower=is_lower)
 
-        # Save student record
+        try:
+            english = float(request.form.get("english", 0))
+            math    = float(request.form.get("math",    0))
+
+            if is_lower:
+                lit_a = float(request.form.get("lit_a", 0))
+                lit_b = float(request.form.get("lit_b", 0))
+                re    = float(request.form.get("re",    0))
+                lug   = float(request.form.get("lug",   0))
+                science, sst = 0, 0
+            else:
+                science = float(request.form.get("science", 0))
+                sst     = float(request.form.get("sst",     0))
+                lit_a = lit_b = re = lug = 0
+
+        except ValueError:
+            flash("Please enter valid numeric marks.", "danger")
+            return render_template("register_student.html",
+                                   class_name=class_name, term=term,
+                                   is_lower=is_lower)
+
+        # Validate all entered marks are 0–100
+        if is_lower:
+            checks = [("Literacy A", lit_a), ("Literacy B", lit_b),
+                      ("English", english), ("Mathematics", math),
+                      ("R.E.", re), ("Luganda", lug)]
+        else:
+            checks = [("English", english), ("Mathematics", math),
+                      ("Science", science), ("SST", sst)]
+
+        for subject, mark in checks:
+            if not (0 <= mark <= 100):
+                flash(f"{subject} mark must be between 0 and 100.", "danger")
+                return render_template("register_student.html",
+                                       class_name=class_name, term=term,
+                                       is_lower=is_lower)
+
         from datetime import datetime
         student = Student(
             full_name  = full_name,
@@ -77,26 +95,29 @@ def register_student():
             teacher_id = current_user.id
         )
         db.session.add(student)
-        db.session.flush()          # Get student.id before committing
+        db.session.flush()
 
-        # Save associated marks
         mark_record = Mark(
             student_id = student.id,
             english    = english,
             math       = math,
             science    = science,
-            sst        = sst
+            sst        = sst,
+            lit_a      = lit_a,
+            lit_b      = lit_b,
+            re         = re,
+            lug        = lug,
         )
         db.session.add(mark_record)
         db.session.commit()
 
         flash(f"✔ {full_name} registered successfully!", "success")
-        # Allow teacher to add another student in the same class
         return redirect(url_for("marks.register_student",
                                 class_name=class_name, term=term))
 
     return render_template("register_student.html",
-                           class_name=class_name, term=term)
+                           class_name=class_name, term=term,
+                           is_lower=is_lower)
 
 
 @marks_bp.route("/students")
@@ -135,6 +156,6 @@ def delete_student(student_id):
     db.session.delete(student)
     db.session.commit()
 
-    flash(f"Student record deleted.", "info")
+    flash("Student record deleted.", "info")
     return redirect(url_for("marks.list_students",
                             class_name=class_name, term=term))

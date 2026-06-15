@@ -1,15 +1,7 @@
+LOWER_PRIMARY_CLASSES = ["P1", "P2", "P3"]
+
 
 def get_grade(mark, max_mark=100):
-    """
-    Convert a raw mark to a letter grade and aggregate point.
-
-    Args:
-        mark     : float — the raw mark obtained
-        max_mark : float — maximum possible mark (default 100)
-
-    Returns:
-        dict with keys: grade (str), aggregate (int), remark (str)
-    """
     percentage = (mark / max_mark) * 100 if max_mark > 0 else 0
 
     if percentage >= 90:
@@ -32,46 +24,38 @@ def get_grade(mark, max_mark=100):
         return {"grade": "F9", "aggregate": 7, "remark": "Fail"}
 
 
-def get_division(aggregate_sum):
+def get_division(aggregate_sum, num_subjects=4):
     """
-    Determine division based on the total aggregate points from all subjects.
-    Lower aggregate sum = better division.
-
-    Uganda Primary Division boundaries (4 subjects):
-        4–12   → Division 1
-        13–24  → Division 2
-        25–30 → Division 3
-        31–33 → Division 4
-        34+   → Ungraded (U)
-
-    Args:
-        aggregate_sum : int — sum of aggregate points for all subjects
-
-    Returns:
-        str — "Division 1", "Division 2", etc.
+    Division boundaries scale with number of subjects.
+    P1-P3 has 6 subjects; P4-P7 has 4 subjects.
     """
-    if aggregate_sum <= 12:
-        return "Division 1"
-    elif aggregate_sum <= 24:
-        return "Division 2"
-    elif aggregate_sum <= 30:
-        return "Division 3"
-    elif aggregate_sum <= 33:
-        return "Division 4"
+    if num_subjects == 6:
+        # Lower primary (6 subjects, max aggregate = 42)
+        if aggregate_sum <= 18:
+            return "Division 1"
+        elif aggregate_sum <= 36:
+            return "Division 2"
+        elif aggregate_sum <= 45:
+            return "Division 3"
+        elif aggregate_sum <= 51:
+            return "Division 4"
+        else:
+            return "Ungraded (U)"
     else:
-        return "Ungraded (U)"
+        # Upper primary (4 subjects, max aggregate = 28)
+        if aggregate_sum <= 12:
+            return "Division 1"
+        elif aggregate_sum <= 24:
+            return "Division 2"
+        elif aggregate_sum <= 30:
+            return "Division 3"
+        elif aggregate_sum <= 33:
+            return "Division 4"
+        else:
+            return "Ungraded (U)"
 
 
 def get_teacher_comment(average):
-    """
-    Generate an automatic teacher comment based on the average mark.
-
-    Args:
-        average : float — mean mark across all subjects
-
-    Returns:
-        str — encouraging, age-appropriate comment
-    """
     if average >= 80:
         return ("Outstanding performance! Keep up the excellent work "
                 "and continue to set a great example for your classmates.")
@@ -98,20 +82,29 @@ def get_teacher_comment(average):
 def compute_student_results(mark_obj, max_mark=100):
     """
     Compute full grading details for a student's mark record.
-
-    Args:
-        mark_obj : Mark model instance
-        max_mark : maximum mark per subject (default 100)
-
-    Returns:
-        dict with per-subject grades, totals, aggregate sum, division, comment
+    Automatically detects lower vs upper primary from the student's class.
     """
-    subjects = {
-        "English":        mark_obj.english,
-        "Mathematics":    mark_obj.math,
-        "Science":        mark_obj.science,
-        "Social Studies": mark_obj.sst,
-    }
+    student = mark_obj.student
+    is_lower = student and student.class_name in LOWER_PRIMARY_CLASSES
+
+    if is_lower:
+        # P1–P3: Lit A, Lit B, RE, English, Math, Luganda
+        subjects = {
+            "Literacy A":  mark_obj.lit_a,
+            "Literacy B":  mark_obj.lit_b,
+            "English":     mark_obj.english,
+            "Mathematics": mark_obj.math,
+            "R.E.":        mark_obj.re,
+            "Luganda":     mark_obj.lug,
+        }
+    else:
+        # P4–P7: English, Math, Science, SST
+        subjects = {
+            "English":       mark_obj.english,
+            "Mathematics":   mark_obj.math,
+            "Science":       mark_obj.science,
+            "Social Studies": mark_obj.sst,
+        }
 
     subject_details = {}
     aggregate_sum = 0
@@ -126,14 +119,17 @@ def compute_student_results(mark_obj, max_mark=100):
         }
         aggregate_sum += grading["aggregate"]
 
-    total   = mark_obj.total
-    average = mark_obj.average
+    total        = mark_obj.total
+    average      = mark_obj.average
+    num_subjects = mark_obj.num_subjects
 
     return {
-        "subjects":      subject_details,
-        "total":         total,
-        "average":       round(average, 1),
-        "aggregate_sum": aggregate_sum,
-        "division":      get_division(aggregate_sum),
-        "comment":       get_teacher_comment(average),
+        "subjects":       subject_details,
+        "total":          total,
+        "max_total":      num_subjects * 100,
+        "average":        round(average, 1),
+        "aggregate_sum":  aggregate_sum,
+        "division":       get_division(aggregate_sum, num_subjects),
+        "comment":        get_teacher_comment(average),
+        "is_lower":       is_lower,
     }

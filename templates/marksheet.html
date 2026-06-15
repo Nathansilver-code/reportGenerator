@@ -3,7 +3,6 @@
 
 {% block extra_css %}
 <style>
-  
   @media print {
     body        { font-size: 11pt; }
     .print-header { display: block !important; text-align:center; margin-bottom:1rem; }
@@ -17,17 +16,17 @@
 
 {% block content %}
 
+{% set is_lower = class_name in ["P1", "P2", "P3"] %}
+
 <div class="main-content">
 
- 
-  <div class="print-header">
+  <div class="print-header" style="display:none;">
     <h2 style="margin:0;">PRIMARY SCHOOL MARKSHEET</h2>
     <p>Class: <strong>{{ class_name }}</strong> &nbsp;|&nbsp; {{ term }} &nbsp;|&nbsp;
        Teacher: {{ teacher.full_name }}</p>
     <hr/>
   </div>
 
-  
   <div class="no-print" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
     <div>
       <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin:0;">
@@ -36,7 +35,6 @@
       <p class="text-muted">{{ term }} &nbsp;|&nbsp; {{ results|length }} learner{{ 's' if results|length != 1 else '' }}</p>
     </div>
     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-      
       <button onclick="window.print()" class="btn btn-accent">🖨 Print Marksheet</button>
       <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline">← Change Class</a>
       <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}"
@@ -47,7 +45,6 @@
   {% if results %}
   <div class="card" style="padding:1rem;">
 
-    
     <div class="no-print grid-4" style="margin-bottom:1.5rem; gap:0.75rem;">
       {% set total_marks = results | map(attribute='total') | list %}
       {% set best  = total_marks | max %}
@@ -78,15 +75,21 @@
           <tr>
             <th>Pos.</th>
             <th>Learner Name</th>
-            <th>Eng.</th>
-            <th>Eng. Grade</th>
-            <th>Math</th>
-            <th>Math Grade</th>
-            <th>Sci.</th>
-            <th>Sci. Grade</th>
-            <th>SST</th>
-            <th>SST Grade</th>
-            <th>Total /400</th>
+            {% if is_lower %}
+              <th>Lit A</th><th>Grade</th>
+              <th>Lit B</th><th>Grade</th>
+              <th>Eng.</th><th>Grade</th>
+              <th>Math</th><th>Grade</th>
+              <th>R.E.</th><th>Grade</th>
+              <th>Luganda</th><th>Grade</th>
+              <th>Total /600</th>
+            {% else %}
+              <th>Eng.</th><th>Grade</th>
+              <th>Math</th><th>Grade</th>
+              <th>Sci.</th><th>Grade</th>
+              <th>SST</th><th>Grade</th>
+              <th>Total /400</th>
+            {% endif %}
             <th>Agg. Sum</th>
             <th>Division</th>
             <th class="no-print">Report</th>
@@ -98,35 +101,26 @@
             <td style="font-weight:700; color:var(--primary);">{{ r.position }}</td>
             <td style="font-weight:600; white-space:nowrap;">{{ r.full_name }}</td>
 
-            
-            <td>{{ r.subjects['English'].mark }}</td>
-            <td>
-              {% set g = r.subjects['English'].grade %}
-              <span class="badge badge-{{ g | lower }}">{{ g }}</span>
-            </td>
+            {% if is_lower %}
+              {% for subj in ['Literacy A', 'Literacy B', 'English', 'Mathematics', 'R.E.', 'Luganda'] %}
+                {% if r.subjects[subj] is defined %}
+                  <td>{{ r.subjects[subj].mark }}</td>
+                  <td><span class="badge badge-{{ r.subjects[subj].grade | lower }}">{{ r.subjects[subj].grade }}</span></td>
+                {% else %}
+                  <td>—</td><td>—</td>
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              {% for subj in ['English', 'Mathematics', 'Science', 'Social Studies'] %}
+                {% if r.subjects[subj] is defined %}
+                  <td>{{ r.subjects[subj].mark }}</td>
+                  <td><span class="badge badge-{{ r.subjects[subj].grade | lower }}">{{ r.subjects[subj].grade }}</span></td>
+                {% else %}
+                  <td>—</td><td>—</td>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
 
-            
-            <td>{{ r.subjects['Mathematics'].mark }}</td>
-            <td>
-              {% set g = r.subjects['Mathematics'].grade %}
-              <span class="badge badge-{{ g | lower }}">{{ g }}</span>
-            </td>
-
-            
-            <td>{{ r.subjects['Science'].mark }}</td>
-            <td>
-              {% set g = r.subjects['Science'].grade %}
-              <span class="badge badge-{{ g | lower }}">{{ g }}</span>
-            </td>
-
-            
-            <td>{{ r.subjects['Social Studies'].mark }}</td>
-            <td>
-              {% set g = r.subjects['Social Studies'].grade %}
-              <span class="badge badge-{{ g | lower }}">{{ g }}</span>
-            </td>
-
-            
             <td style="font-weight:700;">{{ r.total }}</td>
             <td style="font-weight:700; color:var(--primary);">{{ r.aggregate }}</td>
             <td>
@@ -148,7 +142,6 @@
       </table>
     </div>
 
-    
   </div>
   {% else %}
   <div class="card" style="text-align:center; padding:3rem;">

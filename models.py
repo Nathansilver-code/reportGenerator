@@ -4,10 +4,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 
-# P1-P3 subjects
+
 LOWER_PRIMARY_CLASSES = ["P1", "P2", "P3"]
 
-# P4-P7 subjects
+
 UPPER_PRIMARY_CLASSES = ["P4", "P5", "P6", "P7"]
 
 
@@ -99,13 +99,13 @@ class Mark(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"), nullable=False)
 
-    # P4-P7 subjects
+    
     english = db.Column(db.Float, nullable=False, default=0)
     math    = db.Column(db.Float, nullable=False, default=0)
     science = db.Column(db.Float, nullable=False, default=0)
     sst     = db.Column(db.Float, nullable=False, default=0)
 
-    # P1-P3 subjects
+    
     lit_a = db.Column(db.Float, nullable=False, default=0)
     lit_b = db.Column(db.Float, nullable=False, default=0)
     re    = db.Column(db.Float, nullable=False, default=0)  # Religious Education

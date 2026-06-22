@@ -12,7 +12,7 @@
     <p class="text-muted mb-1">Select the class and term, then register learners.</p>
 
     <div class="card mt-2">
-      <h2 class="card-title">📚 Select Class &amp; Term</h2>
+      <h2 class="card-title"> Select Class &amp; Term</h2>
 
       <form method="POST" action="{{ url_for('marks.select_class') }}">
 
@@ -53,7 +53,7 @@
 
     
     <div class="card" style="background:#f0f9f4; border:1px solid #a9dfbf;">
-      <p style="font-weight:600; color:var(--primary); margin-bottom:0.5rem;">📊 View Existing Records</p>
+      <p style="font-weight:600; color:var(--primary); margin-bottom:0.5rem;"> View Existing Records</p>
       <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
         <a href="{{ url_for('marks.list_students') }}" class="btn btn-outline btn-sm">All Students</a>
         <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline btn-sm">Marksheets &amp; Reports</a>

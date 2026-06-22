@@ -10,7 +10,7 @@
       <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin:0;">Students</h1>
       <p class="text-muted">All learners you have registered</p>
     </div>
-    <a href="{{ url_for('marks.select_class') }}" class="btn btn-primary">➕ Add Student</a>
+    <a href="{{ url_for('marks.select_class') }}" class="btn btn-primary">Add Student</a>
   </div>
 
   <!-- Filter bar -->
@@ -57,7 +57,7 @@
       {% if selected_class %}
       <div style="display:flex; gap:0.5rem;">
         <a href="{{ url_for('reports.marksheet', class_name=selected_class, term=selected_term or 'Term 1') }}"
-           class="btn btn-primary btn-sm">📊 View Marksheet</a>
+           class="btn btn-primary btn-sm"> View Marksheet</a>
       </div>
       {% endif %}
     </div>
@@ -148,7 +148,7 @@
             <td>
               <div style="display:flex; gap:0.4rem;">
                 <a href="{{ url_for('reports.report_card', student_id=student.id) }}"
-                   class="btn btn-outline btn-sm">📄 Report</a>
+                   class="btn btn-outline btn-sm"> Report</a>
                 <form method="POST"
                       action="{{ url_for('marks.delete_student', student_id=student.id) }}"
                       onsubmit="return confirm('Delete {{ student.full_name }}? This cannot be undone.');"

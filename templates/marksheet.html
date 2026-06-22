@@ -38,7 +38,7 @@
       <button onclick="window.print()" class="btn btn-accent">🖨 Print Marksheet</button>
       <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline">← Change Class</a>
       <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}"
-         class="btn btn-primary">➕ Add Student</a>
+         class="btn btn-primary"> Add Student</a>
     </div>
   </div>
 
@@ -149,6 +149,19 @@
     <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}"
        class="btn btn-primary mt-2">➕ Add Students</a>
   </div>
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+  <button onclick="window.print()" class="btn btn-accent">🖨 Print Marksheet</button>
+
+  <!-- ADD THESE TWO LINES -->
+  <a href="{{ url_for('reports.download_excel', class_name=class_name, term=term) }}"
+     class="btn btn-outline">⬇ Download Excel</a>
+  <a href="{{ url_for('reports.download_pdf', class_name=class_name, term=term) }}"
+     class="btn btn-outline">⬇ Download PDF</a>
+
+  <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline">← Change Class</a>
+  <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}"
+     class="btn btn-primary">➕ Add Student</a>
+</div>
   {% endif %}
 
 </div>

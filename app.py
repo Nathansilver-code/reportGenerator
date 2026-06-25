@@ -6,16 +6,14 @@ from flask_migrate import Migrate
 
 from datetime import datetime
 
-@app.context_processor
-def inject_now():
-    return {'now': datetime.utcnow()}
-
-
 def create_app():
     """Application factory: creates and configures the Flask app."""
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.utcnow()}
     
     db.init_app(app)
     login_manager.init_app(app)

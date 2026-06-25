@@ -7,33 +7,12 @@ import io
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4, A5, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
-from flask import make_response
-from weasyprint import HTML as WeasyprintHTML
-
-@reports_bp.route('/report-card/<int:student_id>/pdf')
-@login_required
-def download_report_pdf(student_id):
-    # reuse your existing report_card logic
-    student = Student.query.get_or_404(student_id)
-    # ... gather computed, teacher, position, total_in_class same as report_card view
-    html_string = render_template('report_card.html',
-        student=student,
-        computed=computed,
-        teacher=teacher,
-        position=position,
-        total_in_class=total_in_class
-    )
-    pdf = WeasyprintHTML(string=html_string).write_pdf()
-    response = make_response(pdf)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename=report_{student.full_name}.pdf'
-    return response
 
 reports_bp = Blueprint("reports", __name__)
 
@@ -42,151 +21,16 @@ TERMS           = ["Term 1", "Term 2", "Term 3"]
 
 
 def _rank_students(students_data):
-    """
-    Assign positions (1st, 2nd, …) to a list of student result dicts.
-    Ranking is based on total marks (descending).
-    Students with equal totals share the same position (dense ranking).
-    """
     sorted_data = sorted(students_data, key=lambda x: x["total"], reverse=True)
-
     position   = 1
     prev_total = None
-
     for i, entry in enumerate(sorted_data):
         if entry["total"] != prev_total:
             position   = i + 1
             prev_total = entry["total"]
         entry["position"] = position
-
     position_map = {entry["student_id"]: entry["position"] for entry in sorted_data}
     return position_map
-
-
-@reports_bp.route("/marksheet")
-@login_required
-def marksheet():
-    class_name = request.args.get("class_name")
-    term       = request.args.get("term", "Term 1")
-
-    if not class_name:
-        flash("Please select a class to view the marksheet.", "warning")
-        return redirect(url_for("marks.select_class"))
-
-    # ── KEY FIX 1: Admin queries ALL students in the class ──
-    # Teacher queries ONLY their own students
-    if current_user.is_admin:
-        # Admin sees every student in this class regardless of which
-        # teacher entered them
-        students = Student.query.filter_by(
-            class_name = class_name,
-            term       = term
-        ).order_by(Student.full_name).all()
-    else:
-        # Regular teacher sees only the students they registered
-        students = Student.query.filter_by(
-            teacher_id = current_user.id,
-            class_name = class_name,
-            term       = term
-        ).order_by(Student.full_name).all()
-
-    if not students:
-        flash(f"No students found for {class_name} in {term}.", "info")
-        return redirect(url_for("reports.reports_home"))
-
-    # Compute results for every student
-    results = []
-    for student in students:
-        if student.marks:
-            computed = compute_student_results(student.marks)
-            results.append({
-                "student_id":   student.id,
-                "full_name":    student.full_name,
-                "class_name":   student.class_name,
-                "teacher_name": student.teacher.full_name,  # show which teacher entered
-                "total":        computed["total"],
-                "average":      computed["average"],
-                "aggregate":    computed["aggregate_sum"],
-                "division":     computed["division"],
-                "subjects":     computed["subjects"],
-            })
-
-    # Assign positions based on total marks
-    position_map = _rank_students(results)
-    for entry in results:
-        entry["position"] = position_map.get(entry["student_id"], "-")
-
-    # Re-sort by position for display
-    results.sort(key=lambda x: x["position"])
-
-    return render_template(
-        "marksheet.html",
-        results    = results,
-        class_name = class_name,
-        term       = term,
-        teacher    = current_user,
-        classes    = PRIMARY_CLASSES,
-        terms      = TERMS,
-    )
-
-
-@reports_bp.route("/report/<int:student_id>")
-@login_required
-def report_card(student_id):
-
-    # ── KEY FIX 2: Block teachers immediately ──────────────
-    # If the logged-in user is NOT admin, deny access entirely.
-    # abort(403) shows a "Forbidden" error page.
-    if not current_user.can_view_reports:
-        abort(403)
-
-    # Admin can view ANY student's report card — no teacher_id filter
-    student = Student.query.get_or_404(student_id)
-
-    if not student.marks:
-        flash("No marks found for this student.", "warning")
-        return redirect(url_for("reports.reports_home"))
-
-    # Compute full results
-    computed = compute_student_results(student.marks)
-
-    # Determine position within the class & term
-    # Admin sees all classmates across all teachers for accurate ranking
-    classmates = Student.query.filter_by(
-        class_name = student.class_name,
-        term       = student.term
-    ).all()
-
-    # Build ranking list from all classmates
-    class_results = []
-    for cm in classmates:
-        if cm.marks:
-            class_results.append({
-                "student_id": cm.id,
-                "total":      cm.marks.total,
-            })
-
-    position_map   = _rank_students(class_results)
-    position       = position_map.get(student_id, "-")
-    total_in_class = len(class_results)
-
-    # Pass the student's own teacher name for display on the report card
-    teacher = student.teacher
-
-    return render_template(
-        "report_card.html",
-        student        = student,
-        computed       = computed,
-        position       = position,
-        total_in_class = total_in_class,
-        teacher        = teacher,
-    )
-
-
-@reports_bp.route("/reports")
-@login_required
-def reports_home():
-    return render_template("reports_home.html",
-                           classes=PRIMARY_CLASSES, terms=TERMS)
 
 
 def _get_marksheet_data(class_name, term):
@@ -214,6 +58,281 @@ def _get_marksheet_data(class_name, term):
         entry["position"] = position_map.get(entry["student_id"], "-")
     results.sort(key=lambda x: x["position"])
     return results
+
+
+@reports_bp.route("/report-card/<int:student_id>/pdf")
+@login_required
+def download_report_pdf(student_id):
+    student = Student.query.get_or_404(student_id)
+
+    if not student.marks:
+        flash("No marks found for this student.", "warning")
+        return redirect(url_for("reports.reports_home"))
+
+    computed = compute_student_results(student.marks)
+
+    classmates = Student.query.filter_by(
+        class_name=student.class_name,
+        term=student.term
+    ).all()
+    class_results = []
+    for cm in classmates:
+        if cm.marks:
+            class_results.append({"student_id": cm.id, "total": cm.marks.total})
+    position_map   = _rank_students(class_results)
+    position       = position_map.get(student_id, "-")
+    total_in_class = len(class_results)
+    teacher        = student.teacher
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A5,
+        leftMargin=1.2*cm, rightMargin=1.2*cm,
+        topMargin=1.2*cm, bottomMargin=1.2*cm
+    )
+
+    NAVY  = colors.HexColor("#0d2b6e")
+    BLUE  = colors.HexColor("#1a56b0")
+    PALE  = colors.HexColor("#eff6ff")
+    WHITE = colors.white
+
+    title_style = ParagraphStyle("title",
+        fontName="Helvetica-Bold", fontSize=13,
+        textColor=WHITE, alignment=1, spaceAfter=2)
+    sub_style = ParagraphStyle("sub",
+        fontName="Helvetica", fontSize=8,
+        textColor=WHITE, alignment=1, spaceAfter=4)
+    section_style = ParagraphStyle("section",
+        fontName="Helvetica-Bold", fontSize=8,
+        textColor=BLUE, spaceBefore=8, spaceAfter=4)
+    comment_style = ParagraphStyle("comment",
+        fontName="Helvetica", fontSize=8,
+        textColor=colors.HexColor("#0d2b6e"),
+        leading=12, spaceBefore=4, spaceAfter=4)
+
+    story = []
+
+    # ── Banner ──
+    banner_data = [
+        [Paragraph("MARANATHA SCHOOLS", title_style)],
+        [Paragraph(
+            f"Student Report Card  |  {student.term}  |  Academic Year {student.year}",
+            sub_style)],
+    ]
+    banner = Table(banner_data, colWidths=[13*cm])
+    banner.setStyle(TableStyle([
+        ("BACKGROUND",   (0,0), (-1,-1), NAVY),
+        ("ALIGN",        (0,0), (-1,-1), "CENTER"),
+        ("TOPPADDING",   (0,0), (-1,-1), 8),
+        ("BOTTOMPADDING",(0,0), (-1,-1), 8),
+    ]))
+    story.append(banner)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Student Info ──
+    story.append(Paragraph("STUDENT INFORMATION", section_style))
+    info_data = [
+        ["Full Name",     student.full_name,  "Class",         student.class_name],
+        ["Term",          student.term,        "Academic Year", str(student.year)],
+        ["Class Teacher", teacher.full_name,   "Position",      f"{position} / {total_in_class}"],
+    ]
+    info_table = Table(info_data, colWidths=[2.8*cm, 4*cm, 2.8*cm, 3.4*cm])
+    info_table.setStyle(TableStyle([
+        ("FONTNAME",     (0,0), (-1,-1), "Helvetica"),
+        ("FONTNAME",     (0,0), (0,-1),  "Helvetica-Bold"),
+        ("FONTNAME",     (2,0), (2,-1),  "Helvetica-Bold"),
+        ("FONTSIZE",     (0,0), (-1,-1), 8),
+        ("BACKGROUND",   (0,0), (-1,-1), PALE),
+        ("GRID",         (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
+        ("TOPPADDING",   (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING",(0,0), (-1,-1), 4),
+        ("LEFTPADDING",  (0,0), (-1,-1), 6),
+    ]))
+    story.append(info_table)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Academic Performance ──
+    story.append(Paragraph("ACADEMIC PERFORMANCE", section_style))
+    subj_data = [["Subject", "Marks (/100)", "Grade", "Agg.", "Remark"]]
+    for subj, details in computed["subjects"].items():
+        subj_data.append([
+            subj,
+            str(details["mark"]),
+            details["grade"],
+            str(details["aggregate"]),
+            details["remark"],
+        ])
+    subj_table = Table(subj_data,
+        colWidths=[3.5*cm, 2.5*cm, 1.5*cm, 1.5*cm, 4*cm],
+        repeatRows=1)
+    subj_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,0),  BLUE),
+        ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
+        ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
+        ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
+        ("FONTSIZE",      (0,0), (-1,-1), 8),
+        ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
+        ("ROWBACKGROUNDS",(0,1), (-1,-1), [WHITE, PALE]),
+        ("ALIGN",         (1,0), (3,-1),  "CENTER"),
+        ("TOPPADDING",    (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+        ("LEFTPADDING",   (0,0), (-1,-1), 6),
+    ]))
+    story.append(subj_table)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Summary ──
+    summary_data = [[
+        Paragraph(f"<b><font color='#93c5fd' size=14>{computed['total']}</font></b><br/>"
+                  f"<font color='white' size=7>Total / {computed['max_total']}</font>",
+                  ParagraphStyle("s", alignment=1)),
+        Paragraph(f"<b><font color='#93c5fd' size=14>{computed['aggregate_sum']}</font></b><br/>"
+                  f"<font color='white' size=7>Aggregate Sum</font>",
+                  ParagraphStyle("s", alignment=1)),
+        Paragraph(f"<b><font color='#93c5fd' size=14>{computed['division']}</font></b><br/>"
+                  f"<font color='white' size=7>Division</font>",
+                  ParagraphStyle("s", alignment=1)),
+    ]]
+    summary_table = Table(summary_data, colWidths=[4.33*cm, 4.33*cm, 4.33*cm])
+    summary_table.setStyle(TableStyle([
+        ("BACKGROUND",   (0,0), (-1,-1), NAVY),
+        ("ALIGN",        (0,0), (-1,-1), "CENTER"),
+        ("TOPPADDING",   (0,0), (-1,-1), 8),
+        ("BOTTOMPADDING",(0,0), (-1,-1), 8),
+    ]))
+    story.append(summary_table)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Comment ──
+    story.append(Paragraph("CLASS TEACHER'S COMMENT", section_style))
+    story.append(Paragraph(computed["comment"], comment_style))
+    story.append(Spacer(1, 0.5*cm))
+
+    # ── Signatures ──
+    sig_data = [["Class Teacher's Signature & Date", "Head Teacher's Signature & Date"]]
+    sig_table = Table(sig_data, colWidths=[6.5*cm, 6.5*cm])
+    sig_table.setStyle(TableStyle([
+        ("FONTNAME",    (0,0), (-1,-1), "Helvetica"),
+        ("FONTSIZE",    (0,0), (-1,-1), 7),
+        ("TEXTCOLOR",   (0,0), (-1,-1), BLUE),
+        ("LINEABOVE",   (0,0), (-1,-1), 0.5, BLUE),
+        ("ALIGN",       (0,0), (-1,-1), "CENTER"),
+        ("TOPPADDING",  (0,0), (-1,-1), 4),
+    ]))
+    story.append(sig_table)
+
+    doc.build(story)
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"ReportCard_{student.full_name}_{student.term}.pdf"
+    )
+
+
+@reports_bp.route("/marksheet")
+@login_required
+def marksheet():
+    class_name = request.args.get("class_name")
+    term       = request.args.get("term", "Term 1")
+
+    if not class_name:
+        flash("Please select a class to view the marksheet.", "warning")
+        return redirect(url_for("marks.select_class"))
+
+    if current_user.is_admin:
+        students = Student.query.filter_by(
+            class_name=class_name, term=term
+        ).order_by(Student.full_name).all()
+    else:
+        students = Student.query.filter_by(
+            teacher_id=current_user.id, class_name=class_name, term=term
+        ).order_by(Student.full_name).all()
+
+    if not students:
+        flash(f"No students found for {class_name} in {term}.", "info")
+        return redirect(url_for("reports.reports_home"))
+
+    results = []
+    for student in students:
+        if student.marks:
+            computed = compute_student_results(student.marks)
+            results.append({
+                "student_id":   student.id,
+                "full_name":    student.full_name,
+                "class_name":   student.class_name,
+                "teacher_name": student.teacher.full_name,
+                "total":        computed["total"],
+                "average":      computed["average"],
+                "aggregate":    computed["aggregate_sum"],
+                "division":     computed["division"],
+                "subjects":     computed["subjects"],
+            })
+
+    position_map = _rank_students(results)
+    for entry in results:
+        entry["position"] = position_map.get(entry["student_id"], "-")
+    results.sort(key=lambda x: x["position"])
+
+    return render_template(
+        "marksheet.html",
+        results    = results,
+        class_name = class_name,
+        term       = term,
+        teacher    = current_user,
+        classes    = PRIMARY_CLASSES,
+        terms      = TERMS,
+    )
+
+
+@reports_bp.route("/report/<int:student_id>")
+@login_required
+def report_card(student_id):
+    if not current_user.can_view_reports:
+        abort(403)
+
+    student = Student.query.get_or_404(student_id)
+
+    if not student.marks:
+        flash("No marks found for this student.", "warning")
+        return redirect(url_for("reports.reports_home"))
+
+    computed = compute_student_results(student.marks)
+
+    classmates = Student.query.filter_by(
+        class_name=student.class_name,
+        term=student.term
+    ).all()
+
+    class_results = []
+    for cm in classmates:
+        if cm.marks:
+            class_results.append({
+                "student_id": cm.id,
+                "total":      cm.marks.total,
+            })
+
+    position_map   = _rank_students(class_results)
+    position       = position_map.get(student_id, "-")
+    total_in_class = len(class_results)
+    teacher        = student.teacher
+
+    return render_template(
+        "report_card.html",
+        student        = student,
+        computed       = computed,
+        position       = position,
+        total_in_class = total_in_class,
+        teacher        = teacher,
+    )
+
+
+@reports_bp.route("/reports")
+@login_required
+def reports_home():
+    return render_template("reports_home.html",
+                           classes=PRIMARY_CLASSES, terms=TERMS)
 
 
 @reports_bp.route("/marksheet/download/excel")
@@ -246,8 +365,10 @@ def download_excel():
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    return send_file(buf, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                     as_attachment=True, download_name=f"Marksheet_{class_name}_{term}.xlsx")
+    return send_file(buf,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"Marksheet_{class_name}_{term}.xlsx")
 
 
 @reports_bp.route("/marksheet/download/pdf")
@@ -259,7 +380,9 @@ def download_pdf():
     is_lower = class_name in ["P1", "P2", "P3"]
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), leftMargin=1.5*cm, rightMargin=1.5*cm, topMargin=1.5*cm, bottomMargin=1.5*cm)
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4),
+        leftMargin=1.5*cm, rightMargin=1.5*cm,
+        topMargin=1.5*cm, bottomMargin=1.5*cm)
 
     if is_lower:
         headers = ["Pos.", "Name", "Lit A", "Lit B", "Eng", "Math", "R.E.", "Lug", "Total", "Agg", "Division"]
@@ -278,13 +401,13 @@ def download_pdf():
 
     t = Table(table_data, repeatRows=1)
     t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a6e3c")),
-        ("TEXTCOLOR",  (0, 0), (-1, 0), colors.white),
-        ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE",   (0, 0), (-1, -1), 8),
-        ("GRID",       (0, 0), (-1, -1), 0.5, colors.grey),
-        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
-        ("ALIGN",      (1, 1), (1, -1),  "LEFT"),
+        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1a6e3c")),
+        ("TEXTCOLOR",  (0,0), (-1,0), colors.white),
+        ("FONTNAME",   (0,0), (-1,0), "Helvetica-Bold"),
+        ("FONTSIZE",   (0,0), (-1,-1), 8),
+        ("GRID",       (0,0), (-1,-1), 0.5, colors.grey),
+        ("ALIGN",      (0,0), (-1,-1), "CENTER"),
+        ("ALIGN",      (1,1), (1,-1),  "LEFT"),
     ]))
 
     doc.build([t])

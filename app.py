@@ -4,7 +4,11 @@ from extensions import db, login_manager
 from config import Config
 from flask_migrate import Migrate
 
+from datetime import datetime
 
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow()}
 
 
 def create_app():

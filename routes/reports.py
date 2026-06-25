@@ -13,6 +13,28 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
+from flask import make_response
+from weasyprint import HTML as WeasyprintHTML
+
+@reports_bp.route('/report-card/<int:student_id>/pdf')
+@login_required
+def download_report_pdf(student_id):
+    # reuse your existing report_card logic
+    student = Student.query.get_or_404(student_id)
+    # ... gather computed, teacher, position, total_in_class same as report_card view
+    html_string = render_template('report_card.html',
+        student=student,
+        computed=computed,
+        teacher=teacher,
+        position=position,
+        total_in_class=total_in_class
+    )
+    pdf = WeasyprintHTML(string=html_string).write_pdf()
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=report_{student.full_name}.pdf'
+    return response
+
 reports_bp = Blueprint("reports", __name__)
 
 PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]

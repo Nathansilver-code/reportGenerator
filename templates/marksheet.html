@@ -1,54 +1,86 @@
 {% extends "base.html" %}
-{% block title %}Marksheet — {{ class_name }} {{ term }} | PrimaryTrack{% endblock %}
+{% block title %}Marksheet — {{ class_name }} {{ term }} | Maranatha Schools{% endblock %}
 
 {% block extra_css %}
 <style>
   @media print {
-    body        { font-size: 11pt; }
-    .print-header { display: block !important; text-align:center; margin-bottom:1rem; }
-    table       { font-size: 9pt; }
-    thead       { background: #1a6e3c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .badge      { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page       { size: A4 landscape; margin: 1.5cm; }
+    body             { font-size: 10pt; }
+    .no-print        { display: none !important; }
+    .print-header    { display: block !important; }
+    table            { font-size: 8pt; }
+    thead            { background: #1a6e3c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge           { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .analysis-section { page-break-before: always; }
+    @page            { size: A4 portrait; margin: 1.2cm; }
   }
+
+  .print-header { display: none; text-align: center; margin-bottom: 1rem; }
+
+  .analysis-section { margin-top: 2rem; }
+  .analysis-section h3 {
+    font-family: 'Merriweather', serif;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.3rem;
+  }
+
+  .analysis-table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.88rem; }
+  .analysis-table th { background: var(--primary); color: #fff; padding: 0.5rem 0.75rem; text-align: left; }
+  .analysis-table td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #e5e7eb; }
+  .analysis-table tr:nth-child(even) { background: var(--light); }
 </style>
 {% endblock %}
 
 {% block content %}
 
 {% set is_lower = class_name in ["P1", "P2", "P3"] %}
+{% set subjects_list = ['Literacy A', 'Literacy B', 'English', 'Mathematics', 'R.E.', 'Luganda'] if is_lower else ['English', 'Mathematics', 'Science', 'Social Studies'] %}
+
+{# ── Compute year from current date ── #}
+{% set year = now.year if now is defined else 2026 %}
 
 <div class="main-content">
 
-  <div class="print-header" style="display:none;">
-    <h2 style="margin:0;">PRIMARY SCHOOL MARKSHEET</h2>
-    <p>Class: <strong>{{ class_name }}</strong> &nbsp;|&nbsp; {{ term }} &nbsp;|&nbsp;
-       Teacher: {{ teacher.full_name }}</p>
-    <hr/>
+  {# ── PRINT HEADER ── #}
+  <div class="print-header">
+    <h2 style="margin:0; font-size:1.3rem; text-transform:uppercase; letter-spacing:1px;">
+      Maranatha Schools
+    </h2>
+    <h3 style="margin:0.2rem 0; font-size:1rem;">Marksheet</h3>
+    <p style="margin:0.2rem 0;">
+      <strong>Class:</strong> {{ class_name }} &nbsp;|&nbsp;
+      <strong>Term:</strong> {{ term }} &nbsp;|&nbsp;
+      <strong>Year:</strong> {{ year }}
+    </p>
+    <hr style="margin:0.5rem 0;"/>
   </div>
 
+  {# ── SCREEN HEADER ── #}
   <div class="no-print" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
     <div>
       <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin:0;">
         {{ class_name }} Marksheet
       </h1>
-      <p class="text-muted">{{ term }} &nbsp;|&nbsp; {{ results|length }} learner{{ 's' if results|length != 1 else '' }}</p>
+      <p class="text-muted">
+        {{ term }} &nbsp;|&nbsp; {{ year }} &nbsp;|&nbsp;
+        {{ results|length }} learner{{ 's' if results|length != 1 else '' }}
+      </p>
     </div>
     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-  <button onclick="window.print()" class="btn btn-accent">🖨 Print Marksheet</button>
-  <a href="{{ url_for('reports.download_excel', class_name=class_name, term=term) }}"
-     class="btn btn-outline">⬇ Download Excel</a>
-  <a href="{{ url_for('reports.download_pdf', class_name=class_name, term=term) }}"
-     class="btn btn-outline">⬇ Download PDF</a>
-  <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline">← Change Class</a>
-  <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}"
-     class="btn btn-primary">➕ Add Student</a>
-</div>
+      <button onclick="window.print()" class="btn btn-accent">🖨 Print Marksheet</button>
+      <a href="{{ url_for('reports.download_excel', class_name=class_name, term=term) }}" class="btn btn-outline">⬇ Excel</a>
+      <a href="{{ url_for('reports.download_pdf',   class_name=class_name, term=term) }}" class="btn btn-outline">⬇ PDF</a>
+      <a href="{{ url_for('reports.reports_home') }}"                                     class="btn btn-outline">← Change Class</a>
+      <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}" class="btn btn-primary">➕ Add Student</a>
+    </div>
   </div>
 
   {% if results %}
   <div class="card" style="padding:1rem;">
 
+    {# ── SUMMARY CARDS (screen only) ── #}
     <div class="no-print grid-4" style="margin-bottom:1.5rem; gap:0.75rem;">
       {% set total_marks = results | map(attribute='total') | list %}
       {% set best  = total_marks | max %}
@@ -73,6 +105,7 @@
       </div>
     </div>
 
+    {# ── MAIN MARKS TABLE ── #}
     <div class="table-wrapper">
       <table>
         <thead>
@@ -94,7 +127,7 @@
               <th>SST</th><th>Grade</th>
               <th>Total /400</th>
             {% endif %}
-            <th>Agg. Sum</th>
+            <th>Agg.</th>
             <th>Division</th>
             <th class="no-print">Report</th>
           </tr>
@@ -105,40 +138,29 @@
             <td style="font-weight:700; color:var(--primary);">{{ r.position }}</td>
             <td style="font-weight:600; white-space:nowrap;">{{ r.full_name }}</td>
 
-            {% if is_lower %}
-              {% for subj in ['Literacy A', 'Literacy B', 'English', 'Mathematics', 'R.E.', 'Luganda'] %}
-                {% if r.subjects[subj] is defined %}
-                  <td>{{ r.subjects[subj].mark }}</td>
-                  <td><span class="badge badge-{{ r.subjects[subj].grade | lower }}">{{ r.subjects[subj].grade }}</span></td>
-                {% else %}
-                  <td>—</td><td>—</td>
-                {% endif %}
-              {% endfor %}
-            {% else %}
-              {% for subj in ['English', 'Mathematics', 'Science', 'Social Studies'] %}
-                {% if r.subjects[subj] is defined %}
-                  <td>{{ r.subjects[subj].mark }}</td>
-                  <td><span class="badge badge-{{ r.subjects[subj].grade | lower }}">{{ r.subjects[subj].grade }}</span></td>
-                {% else %}
-                  <td>—</td><td>—</td>
-                {% endif %}
-              {% endfor %}
-            {% endif %}
+            {% for subj in subjects_list %}
+              {% if r.subjects[subj] is defined %}
+                <td>{{ r.subjects[subj].mark }}</td>
+                <td><span class="badge badge-{{ r.subjects[subj].grade | lower }}">{{ r.subjects[subj].grade }}</span></td>
+              {% else %}
+                <td>—</td><td>—</td>
+              {% endif %}
+            {% endfor %}
 
             <td style="font-weight:700;">{{ r.total }}</td>
             <td style="font-weight:700; color:var(--primary);">{{ r.aggregate }}</td>
             <td>
-              <span style="font-weight:600;
-                    color: {% if 'Division 1' in r.division %}var(--success)
-                           {% elif 'Division 2' in r.division %}var(--info)
-                           {% elif 'Division 3' in r.division %}var(--warning)
-                           {% else %}var(--danger){% endif %};">
+              <span style="font-weight:700;
+                color:{% if r.division == '1' %}var(--success)
+                      {% elif r.division == '2' %}var(--info)
+                      {% elif r.division == '3' %}var(--warning)
+                      {% elif r.division == '4' %}var(--danger)
+                      {% else %}#888{% endif %};">
                 {{ r.division }}
               </span>
             </td>
             <td class="no-print">
-              <a href="{{ url_for('reports.report_card', student_id=r.student_id) }}"
-                 class="btn btn-outline btn-sm">📄</a>
+              <a href="{{ url_for('reports.report_card', student_id=r.student_id) }}" class="btn btn-outline btn-sm">📄</a>
             </td>
           </tr>
           {% endfor %}
@@ -146,17 +168,137 @@
       </table>
     </div>
 
+    {# ════════════════════════════════════════════
+       ANALYSIS SECTION
+    ════════════════════════════════════════════ #}
+    <div class="analysis-section">
+
+      {# ── TABLE 1: Subject ranking by D1+D2+C3 count ── #}
+      <h3>Table 1: Subject Performance Ranking</h3>
+      <table class="analysis-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Subject</th>
+            <th>D1</th>
+            <th>D2</th>
+            <th>C3</th>
+            <th>D1+D2+C3</th>
+            <th>Average Mark</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set subject_stats = [] %}
+          {% for subj in subjects_list %}
+            {% set ns = namespace(d1=0, d2=0, c3=0, total_mark=0, count=0) %}
+            {% for r in results %}
+              {% if r.subjects[subj] is defined %}
+                {% set g = r.subjects[subj].grade %}
+                {% if g == 'D1' %}{% set ns.d1 = ns.d1 + 1 %}{% endif %}
+                {% if g == 'D2' %}{% set ns.d2 = ns.d2 + 1 %}{% endif %}
+                {% if g == 'C3' %}{% set ns.c3 = ns.c3 + 1 %}{% endif %}
+                {% set ns.total_mark = ns.total_mark + r.subjects[subj].mark %}
+                {% set ns.count = ns.count + 1 %}
+              {% endif %}
+            {% endfor %}
+            {% set top = ns.d1 + ns.d2 + ns.c3 %}
+            {% set avg_mark = (ns.total_mark / ns.count) | round(1) if ns.count > 0 else 0 %}
+            {% set _ = subject_stats.append({'subject': subj, 'd1': ns.d1, 'd2': ns.d2, 'c3': ns.c3, 'top': top, 'avg': avg_mark}) %}
+          {% endfor %}
+
+          {% set ranked = subject_stats | sort(attribute='top', reverse=True) %}
+          {% for s in ranked %}
+          <tr>
+            <td style="font-weight:700;">{{ loop.index }}</td>
+            <td>{{ s.subject }}</td>
+            <td>{{ s.d1 }}</td>
+            <td>{{ s.d2 }}</td>
+            <td>{{ s.c3 }}</td>
+            <td style="font-weight:700; color:var(--primary);">{{ s.top }}</td>
+            <td>{{ s.avg }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {# ── TABLE 2: Division count ── #}
+      <h3>Table 2: Division Summary</h3>
+      <table class="analysis-table">
+        <thead>
+          <tr>
+            <th>Division</th>
+            <th>Number of Students</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set total_students = results | length %}
+          {% for div in ['1', '2', '3', '4', 'F'] %}
+            {% set ns = namespace(count=0) %}
+            {% for r in results %}
+              {% if r.division == div %}{% set ns.count = ns.count + 1 %}{% endif %}
+            {% endfor %}
+            <tr>
+              <td style="font-weight:700;">{{ div }}</td>
+              <td>{{ ns.count }}</td>
+              <td>{{ ((ns.count / total_students) * 100) | round(1) if total_students > 0 else 0 }}%</td>
+            </tr>
+          {% endfor %}
+          <tr style="font-weight:700; background:var(--light);">
+            <td>Total</td>
+            <td>{{ total_students }}</td>
+            <td>100%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {# ── TABLE 3: Pass / Fail / Miss per subject ── #}
+      <h3>Table 3: Subject Pass / Fail / Miss Analysis</h3>
+      <table class="analysis-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Pass</th>
+            <th>Fail</th>
+            <th>Miss (00)</th>
+            <th>Total Sat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for subj in subjects_list %}
+            {% set ns = namespace(pass=0, fail=0, miss=0) %}
+            {% for r in results %}
+              {% if r.subjects[subj] is defined %}
+                {% set m = r.subjects[subj].mark %}
+                {% if m == 0 %}
+                  {% set ns.miss = ns.miss + 1 %}
+                {% elif r.subjects[subj].grade in ['D1','D2','C3','C4','C5','C6','P7','P8'] %}
+                  {% set ns.pass = ns.pass + 1 %}
+                {% else %}
+                  {% set ns.fail = ns.fail + 1 %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {% set sat = ns.pass + ns.fail %}
+            <tr>
+              <td>{{ subj }}</td>
+              <td style="color:var(--success); font-weight:600;">{{ ns.pass }}</td>
+              <td style="color:var(--danger);  font-weight:600;">{{ ns.fail }}</td>
+              <td style="color:#888;           font-weight:600;">{{ ns.miss }}</td>
+              <td style="font-weight:700;">{{ sat }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>{# end analysis-section #}
+
   </div>
   {% else %}
   <div class="card" style="text-align:center; padding:3rem;">
     <p class="text-muted">No results to display for {{ class_name }} {{ term }}.</p>
-    <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}"
-       class="btn btn-primary mt-2">➕ Add Students</a>
+    <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}" class="btn btn-primary mt-2">➕ Add Students</a>
   </div>
-  <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-  <button onclick="window.print()" class="btn btn-accent">🖨 Print Marksheet</button>
-
-</div>
   {% endif %}
 
 </div>

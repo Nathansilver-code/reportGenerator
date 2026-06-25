@@ -1,114 +1,152 @@
 {% extends "base.html" %}
-{% block title %}Report Card — {{ student.full_name }} | PrimaryTrack{% endblock %}
+{% block title %}Report Card — {{ student.full_name }} | Maranatha Schools{% endblock %}
 
 {% block extra_css %}
 <style>
+  /* ── Blue colour palette ── */
+  :root {
+    --rc-dark:    #0d2b6e;   /* deep navy   */
+    --rc-mid:     #1a56b0;   /* main blue   */
+    --rc-light:   #3b82f6;   /* bright blue */
+    --rc-pale:    #eff6ff;   /* very light  */
+    --rc-accent:  #93c5fd;   /* sky blue    */
+  }
+
   .report-card {
-    max-width: 720px;
+    max-width: 640px;
     margin: 0 auto;
-    background: var(--white);
-    border: 2px solid var(--primary);
+    background: #fff;
+    border: 2px solid var(--rc-mid);
     border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 20px rgba(26,86,176,0.15);
   }
 
   .rc-banner {
-    background: var(--primary);
-    color: var(--white);
-    padding: 1.5rem 2rem;
+    background: var(--rc-dark);
+    color: #fff;
+    padding: 1.25rem 1.75rem;
     text-align: center;
   }
-  .rc-banner h1 { font-family:'Merriweather',serif; font-size:1.4rem; margin:0 0 0.2rem; color:var(--accent); }
-  .rc-banner p  { opacity:0.9; font-size:0.88rem; margin:0; }
+  .rc-banner h1 {
+    font-family: 'Merriweather', serif;
+    font-size: 1.15rem;
+    margin: 0 0 0.2rem;
+    color: var(--rc-accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .rc-banner p { opacity: 0.9; font-size: 0.85rem; margin: 0; }
 
   .rc-stripe {
-    height: 10px;
-    background: linear-gradient(to right, #c0392b 33%, #f5c518 33%, #f5c518 66%, #c0392b 66%);
+    height: 8px;
+    background: linear-gradient(to right,
+      var(--rc-dark) 25%,
+      var(--rc-mid)  25%, var(--rc-mid)  50%,
+      var(--rc-light) 50%, var(--rc-light) 75%,
+      var(--rc-accent) 75%);
   }
 
-  .rc-body    { padding: 1.75rem 2rem; }
-  .rc-section { margin-bottom: 1.5rem; }
+  .rc-body    { padding: 1.25rem 1.5rem; }
+  .rc-section { margin-bottom: 1.25rem; }
+
   .rc-section-title {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--primary);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.35rem;
-    margin-bottom: 0.85rem;
+    color: var(--rc-mid);
+    border-bottom: 2px solid var(--rc-light);
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.75rem;
   }
 
   .info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    gap: 0.6rem;
   }
-  .info-cell label { font-size:0.78rem; color:var(--muted); display:block; margin-bottom:0.15rem; }
-  .info-cell span  { font-weight:600; font-size:0.95rem; }
+  .info-cell {
+    background: var(--rc-pale);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+  }
+  .info-cell label { font-size: 0.7rem; color: var(--rc-mid); display: block; margin-bottom: 0.1rem; }
+  .info-cell span  { font-weight: 700; font-size: 0.88rem; color: var(--rc-dark); }
 
-  .rc-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
-  .rc-table th { background:var(--primary); color:var(--white); padding:0.55rem 0.75rem; text-align:left; }
-  .rc-table td { padding:0.55rem 0.75rem; border-bottom:1px solid var(--border); }
-  .rc-table tr:last-child td { border-bottom:none; }
-  .rc-table tr:nth-child(even) { background:#f8fffe; }
+  .rc-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .rc-table th {
+    background: var(--rc-mid);
+    color: #fff;
+    padding: 0.45rem 0.65rem;
+    text-align: left;
+  }
+  .rc-table td { padding: 0.45rem 0.65rem; border-bottom: 1px solid #dbeafe; }
+  .rc-table tr:last-child td { border-bottom: none; }
+  .rc-table tr:nth-child(even) { background: var(--rc-pale); }
 
   .rc-summary {
-    background: var(--primary);
-    color: var(--white);
+    background: var(--rc-dark);
+    color: #fff;
     border-radius: var(--radius);
-    padding: 1rem 1.5rem;
+    padding: 0.85rem 1.25rem;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
     text-align: center;
   }
-  .rc-summary .val { font-size:1.4rem; font-weight:700; color:var(--accent); }
-  .rc-summary .lbl { font-size:0.78rem; opacity:0.85; }
+  .rc-summary .val { font-size: 1.3rem; font-weight: 700; color: var(--rc-accent); }
+  .rc-summary .lbl { font-size: 0.72rem; opacity: 0.85; }
 
   .rc-comment {
-    background: #f9fbe7;
-    border-left: 4px solid var(--accent);
+    background: var(--rc-pale);
+    border-left: 4px solid var(--rc-light);
     border-radius: 0 var(--radius) var(--radius) 0;
-    padding: 0.85rem 1.1rem;
-    font-size: 0.92rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
     line-height: 1.6;
-    color: var(--text);
+    color: var(--rc-dark);
   }
 
   .signature-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
-    margin-top: 1.5rem;
+    margin-top: 1.25rem;
   }
   .sig-line {
-    border-top: 1px solid var(--dark);
+    border-top: 1px solid var(--rc-mid);
     padding-top: 0.3rem;
-    font-size: 0.82rem;
-    color: var(--muted);
+    font-size: 0.75rem;
+    color: var(--rc-mid);
     text-align: center;
   }
 
+  /* ── Print: A5 portrait ── */
   @media print {
-    .report-card { border-color: #000; box-shadow: none; }
-    .rc-summary  { background: #1a6e3c !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .rc-table th { background: #1a6e3c !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .rc-banner   { background: #1a6e3c !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .rc-stripe   { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .badge       { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    @page { size: A4 portrait; margin: 1.5cm; }
+    .no-print        { display: none !important; }
+    .report-card     { border-color: #000; box-shadow: none; max-width: 100%; }
+    .rc-banner       { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-stripe       { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-summary      { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-table th     { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-table tr:nth-child(even) { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .info-cell       { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-comment      { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge           { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page            { size: A5 portrait; margin: 1cm; }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-
 <div class="main-content">
 
+  {# ── Action buttons (screen only) ── #}
   <div class="no-print" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
-    <button onclick="window.print()" class="btn btn-accent">🖨 Print Report Card</button>
+    <button onclick="window.print()" class="btn btn-primary">🖨 Print Report Card</button>
+    <a href="{{ url_for('reports.download_report_pdf', student_id=student.id) }}"
+       class="btn btn-primary">⬇ Download PDF</a>
     <a href="{{ url_for('reports.marksheet', class_name=student.class_name, term=student.term) }}"
        class="btn btn-outline">← Class Marksheet</a>
     <a href="{{ url_for('marks.list_students') }}" class="btn btn-outline">👥 All Students</a>
@@ -116,15 +154,16 @@
 
   <div class="report-card">
 
+    {# ── Banner ── #}
     <div class="rc-banner">
-      <h1> PRIMARY SCHOOL PROGRESS REPORT</h1>
-      <p>Academic Year {{ student.year }} &nbsp;|&nbsp; {{ student.term }}</p>
+      <h1>Maranatha Schools</h1>
+      <p>Student Report Card &nbsp;|&nbsp; {{ student.term }} &nbsp;|&nbsp; Academic Year {{ student.year }}</p>
     </div>
     <div class="rc-stripe"></div>
 
     <div class="rc-body">
 
-      <!-- Student info -->
+      {# ── Student Info ── #}
       <div class="rc-section">
         <div class="rc-section-title">Student Information</div>
         <div class="info-grid">
@@ -155,16 +194,16 @@
         </div>
       </div>
 
-      <!-- Subjects table -->
+      {# ── Academic Performance ── #}
       <div class="rc-section">
         <div class="rc-section-title">Academic Performance</div>
         <table class="rc-table">
           <thead>
             <tr>
               <th>Subject</th>
-              <th>Marks (/ 100)</th>
+              <th>Marks (/100)</th>
               <th>Grade</th>
-              <th>Aggregate</th>
+              <th>Agg.</th>
               <th>Remark</th>
             </tr>
           </thead>
@@ -173,9 +212,7 @@
             <tr>
               <td style="font-weight:600;">{{ subject }}</td>
               <td>{{ details.mark }}</td>
-              <td>
-                <span class="badge badge-{{ details.grade | lower }}">{{ details.grade }}</span>
-              </td>
+              <td><span class="badge badge-{{ details.grade | lower }}">{{ details.grade }}</span></td>
               <td style="text-align:center; font-weight:600;">{{ details.aggregate }}</td>
               <td>{{ details.remark }}</td>
             </tr>
@@ -184,12 +221,12 @@
         </table>
       </div>
 
-      <!-- Summary bar -->
+      {# ── Summary ── #}
       <div class="rc-section">
         <div class="rc-summary">
           <div>
             <div class="val">{{ computed.total }}</div>
-            <div class="lbl">Total Marks / {{ computed.max_total }}</div>
+            <div class="lbl">Total / {{ computed.max_total }}</div>
           </div>
           <div>
             <div class="val">{{ computed.aggregate_sum }}</div>
@@ -202,15 +239,13 @@
         </div>
       </div>
 
-      <!-- Comment -->
+      {# ── Comment ── #}
       <div class="rc-section">
         <div class="rc-section-title">Class Teacher's Comment</div>
-        <div class="rc-comment">
-          {{ computed.comment }}
-        </div>
+        <div class="rc-comment">{{ computed.comment }}</div>
       </div>
 
-      <!-- Signatures -->
+      {# ── Signatures ── #}
       <div class="signature-row">
         <div class="sig-line">Class Teacher's Signature &amp; Date</div>
         <div class="sig-line">Head Teacher's Signature &amp; Date</div>

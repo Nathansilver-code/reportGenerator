@@ -383,42 +383,191 @@ def download_excel():
 @login_required
 def download_pdf():
     class_name = request.args.get("class_name")
-    term = request.args.get("term", "Term 1")
-    results = _get_marksheet_data(class_name, term)
-    is_lower = class_name in ["P1", "P2", "P3"]
-
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=landscape(A4),
-        leftMargin=1.5*cm, rightMargin=1.5*cm,
-        topMargin=1.5*cm, bottomMargin=1.5*cm)
+    term       = request.args.get("term", "Term 1")
+    results    = _get_marksheet_data(class_name, term)
+    is_lower   = class_name in ["P1", "P2", "P3"]
+    year       = datetime.utcnow().year
 
     if is_lower:
-        headers = ["Pos.", "Name", "Lit A", "Lit B", "Eng", "Math", "R.E.", "Lug", "Total", "Agg", "Division"]
-        subj_order = ["Literacy A", "Literacy B", "English", "Mathematics", "R.E.", "Luganda"]
+        subj_order   = ["Literacy A", "Literacy B", "English", "Mathematics", "R.E.", "Luganda"]
+        col_headers  = ["Pos.", "Name", "Lit A", "Lit B", "Eng", "Math", "R.E.", "Lug", "Total", "Agg", "Div"]
     else:
-        headers = ["Pos.", "Name", "Eng", "Math", "Sci", "SST", "Total", "Agg", "Division"]
-        subj_order = ["English", "Mathematics", "Science", "Social Studies"]
+        subj_order   = ["English", "Mathematics", "Science", "Social Studies"]
+        col_headers  = ["Pos.", "Name", "Eng", "Math", "Sci", "SST", "Total", "Agg", "Div"]
 
-    table_data = [headers]
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=1*cm, rightMargin=1*cm,
+        topMargin=1*cm, bottomMargin=1*cm
+    )
+
+    NAVY  = colors.HexColor("#0d2b6e")
+    BLUE  = colors.HexColor("#1a56b0")
+    PALE  = colors.HexColor("#eff6ff")
+    WHITE = colors.white
+    GREEN = colors.HexColor("#166534")
+    RED   = colors.HexColor("#991b1b")
+
+    heading_style = ParagraphStyle("heading",
+        fontName="Helvetica-Bold", fontSize=14,
+        alignment=1, spaceAfter=4, textColor=NAVY)
+    sub_style = ParagraphStyle("sub",
+        fontName="Helvetica", fontSize=9,
+        alignment=1, spaceAfter=6)
+    section_style = ParagraphStyle("section",
+        fontName="Helvetica-Bold", fontSize=9,
+        textColor=BLUE, spaceBefore=10, spaceAfter=4)
+
+    story = []
+
+    # ── Header ──
+    story.append(Paragraph("MARANATHA SCHOOLS MARKSHEET", heading_style))
+    story.append(Paragraph(
+        f"Class: {class_name}  |  Term: {term}  |  Year: {year}  |  Students: {len(results)}",
+        sub_style))
+    story.append(Spacer(1, 0.2*cm))
+
+    # ── Main marks table ──
+    table_data = [col_headers]
     for r in results:
         row = [str(r["position"]), r["full_name"]]
         for subj in subj_order:
-            row.append(str(r["subjects"].get(subj, {}).get("mark", "")))
+            row.append(str(r["subjects"].get(subj, {}).get("mark", "-")))
         row += [str(r["total"]), str(r["aggregate"]), r["division"]]
         table_data.append(row)
 
-    t = Table(table_data, repeatRows=1)
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1a6e3c")),
-        ("TEXTCOLOR",  (0,0), (-1,0), colors.white),
-        ("FONTNAME",   (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE",   (0,0), (-1,-1), 8),
-        ("GRID",       (0,0), (-1,-1), 0.5, colors.grey),
-        ("ALIGN",      (0,0), (-1,-1), "CENTER"),
-        ("ALIGN",      (1,1), (1,-1),  "LEFT"),
-    ]))
+    # Column widths for A4 portrait (19cm usable)
+    if is_lower:
+        col_widths = [1*cm, 4*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.2*cm, 1.2*cm]
+    else:
+        col_widths = [1*cm, 5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2*cm, 1.5*cm, 1.5*cm]
 
-    doc.build([t])
+    main_table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    main_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,0),  BLUE),
+        ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
+        ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
+        ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
+        ("FONTSIZE",      (0,0), (-1,-1), 7.5),
+        ("GRID",          (0,0), (-1,-1), 0.4, colors.grey),
+        ("ROWBACKGROUNDS",(0,1), (-1,-1), [WHITE, PALE]),
+        ("ALIGN",         (0,0), (-1,-1), "CENTER"),
+        ("ALIGN",         (1,1), (1,-1),  "LEFT"),
+        ("TOPPADDING",    (0,0), (-1,-1), 3),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+    ]))
+    story.append(main_table)
+    story.append(Spacer(1, 0.4*cm))
+
+    # ── Table 1: Subject performance ranking ──
+    story.append(Paragraph("Table 1: Subject Performance Ranking", section_style))
+
+    subject_stats = []
+    for subj in subj_order:
+        d1 = d2 = c3 = total_mark = count = 0
+        for r in results:
+            details = r["subjects"].get(subj)
+            if details:
+                g = details["grade"]
+                if g == "D1": d1 += 1
+                if g == "D2": d2 += 1
+                if g == "C3": c3 += 1
+                total_mark += details["mark"]
+                count += 1
+        top     = d1 + d2 + c3
+        avg_mark = round(total_mark / count, 1) if count > 0 else 0
+        subject_stats.append((subj, d1, d2, c3, top, avg_mark))
+
+    subject_stats.sort(key=lambda x: x[4], reverse=True)
+
+    t1_data = [["Rank", "Subject", "D1", "D2", "C3", "D1+D2+C3", "Avg Mark"]]
+    for i, (subj, d1, d2, c3, top, avg) in enumerate(subject_stats, 1):
+        t1_data.append([str(i), subj, str(d1), str(d2), str(c3), str(top), str(avg)])
+
+    t1 = Table(t1_data, colWidths=[1.5*cm, 5*cm, 2*cm, 2*cm, 2*cm, 2.5*cm, 2.5*cm])
+    t1.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,0),  BLUE),
+        ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
+        ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
+        ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
+        ("FONTSIZE",      (0,0), (-1,-1), 8),
+        ("GRID",          (0,0), (-1,-1), 0.4, colors.grey),
+        ("ROWBACKGROUNDS",(0,1), (-1,-1), [WHITE, PALE]),
+        ("ALIGN",         (0,0), (-1,-1), "CENTER"),
+        ("ALIGN",         (1,1), (1,-1),  "LEFT"),
+        ("TOPPADDING",    (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+    ]))
+    story.append(t1)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Table 2: Division summary ──
+    story.append(Paragraph("Table 2: Division Summary", section_style))
+
+    total_students = len(results)
+    t2_data = [["Division", "Number of Students", "Percentage"]]
+    for div in ["1", "2", "3", "4", "F"]:
+        count = sum(1 for r in results if r["division"] == div)
+        pct   = round((count / total_students) * 100, 1) if total_students > 0 else 0
+        t2_data.append([div, str(count), f"{pct}%"])
+    t2_data.append(["Total", str(total_students), "100%"])
+
+    t2 = Table(t2_data, colWidths=[4*cm, 6*cm, 4*cm])
+    t2.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0),  (-1,0),  BLUE),
+        ("TEXTCOLOR",     (0,0),  (-1,0),  WHITE),
+        ("FONTNAME",      (0,0),  (-1,0),  "Helvetica-Bold"),
+        ("FONTNAME",      (0,1),  (-1,-1), "Helvetica"),
+        ("FONTNAME",      (0,-1), (-1,-1), "Helvetica-Bold"),
+        ("BACKGROUND",    (0,-1), (-1,-1), PALE),
+        ("FONTSIZE",      (0,0),  (-1,-1), 8),
+        ("GRID",          (0,0),  (-1,-1), 0.4, colors.grey),
+        ("ROWBACKGROUNDS",(0,1),  (-1,-2), [WHITE, PALE]),
+        ("ALIGN",         (0,0),  (-1,-1), "CENTER"),
+        ("TOPPADDING",    (0,0),  (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0),  (-1,-1), 4),
+    ]))
+    story.append(t2)
+    story.append(Spacer(1, 0.3*cm))
+
+    # ── Table 3: Pass / Fail / Miss per subject ──
+    story.append(Paragraph("Table 3: Subject Pass / Fail / Miss Analysis", section_style))
+
+    t3_data = [["Subject", "Pass", "Fail", "Miss (00)", "Total Sat"]]
+    for subj in subj_order:
+        passed = failed = missed = 0
+        for r in results:
+            details = r["subjects"].get(subj)
+            if details:
+                m = details["mark"]
+                g = details["grade"]
+                if m == 0:
+                    missed += 1
+                elif g in ["D1","D2","C3","C4","C5","C6","P7","P8"]:
+                    passed += 1
+                else:
+                    failed += 1
+        sat = passed + failed
+        t3_data.append([subj, str(passed), str(failed), str(missed), str(sat)])
+
+    t3 = Table(t3_data, colWidths=[5*cm, 3*cm, 3*cm, 3*cm, 3*cm])
+    t3.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,0),  BLUE),
+        ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
+        ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
+        ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
+        ("FONTSIZE",      (0,0), (-1,-1), 8),
+        ("GRID",          (0,0), (-1,-1), 0.4, colors.grey),
+        ("ROWBACKGROUNDS",(0,1), (-1,-1), [WHITE, PALE]),
+        ("ALIGN",         (0,0), (-1,-1), "CENTER"),
+        ("ALIGN",         (0,1), (0,-1),  "LEFT"),
+        ("TOPPADDING",    (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+    ]))
+    story.append(t3)
+
+    doc.build(story)
     buf.seek(0)
     return send_file(buf, mimetype="application/pdf", as_attachment=True,
                      download_name=f"Marksheet_{class_name}_{term}.pdf")

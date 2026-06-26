@@ -3,17 +3,16 @@
 
 {% block extra_css %}
 <style>
-  /* ── Blue colour palette ── */
   :root {
-    --rc-dark:    #0d2b6e;   /* deep navy   */
-    --rc-mid:     #1a56b0;   /* main blue   */
-    --rc-light:   #3b82f6;   /* bright blue */
-    --rc-pale:    #eff6ff;   /* very light  */
-    --rc-accent:  #93c5fd;   /* sky blue    */
+    --rc-dark:   #0d2b6e;
+    --rc-mid:    #1a56b0;
+    --rc-light:  #3b82f6;
+    --rc-pale:   #eff6ff;
+    --rc-accent: #93c5fd;
   }
 
   .report-card {
-    max-width: 640px;
+    max-width: 780px;
     margin: 0 auto;
     background: #fff;
     border: 2px solid var(--rc-mid);
@@ -25,12 +24,12 @@
   .rc-banner {
     background: var(--rc-dark);
     color: #fff;
-    padding: 1.25rem 1.75rem;
+    padding: 1rem 2rem;
     text-align: center;
   }
   .rc-banner h1 {
     font-family: 'Merriweather', serif;
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     margin: 0 0 0.2rem;
     color: var(--rc-accent);
     text-transform: uppercase;
@@ -39,16 +38,16 @@
   .rc-banner p { opacity: 0.9; font-size: 0.85rem; margin: 0; }
 
   .rc-stripe {
-    height: 8px;
+    height: 7px;
     background: linear-gradient(to right,
-      var(--rc-dark) 25%,
-      var(--rc-mid)  25%, var(--rc-mid)  50%,
+      var(--rc-dark)  25%,
+      var(--rc-mid)   25%, var(--rc-mid)   50%,
       var(--rc-light) 50%, var(--rc-light) 75%,
       var(--rc-accent) 75%);
   }
 
-  .rc-body    { padding: 1.25rem 1.5rem; }
-  .rc-section { margin-bottom: 1.25rem; }
+  .rc-body    { padding: 1rem 1.5rem; }
+  .rc-section { margin-bottom: 0.85rem; }
 
   .rc-section-title {
     font-size: 0.72rem;
@@ -57,31 +56,31 @@
     letter-spacing: 1px;
     color: var(--rc-mid);
     border-bottom: 2px solid var(--rc-light);
-    padding-bottom: 0.3rem;
-    margin-bottom: 0.75rem;
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
   }
 
   .info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.6rem;
+    gap: 0.5rem;
   }
   .info-cell {
     background: var(--rc-pale);
-    border-radius: 6px;
-    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    padding: 0.3rem 0.6rem;
   }
-  .info-cell label { font-size: 0.7rem; color: var(--rc-mid); display: block; margin-bottom: 0.1rem; }
-  .info-cell span  { font-weight: 700; font-size: 0.88rem; color: var(--rc-dark); }
+  .info-cell label { font-size: 0.68rem; color: var(--rc-mid); display: block; margin-bottom: 0.05rem; }
+  .info-cell span  { font-weight: 700; font-size: 0.85rem; color: var(--rc-dark); }
 
   .rc-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
   .rc-table th {
     background: var(--rc-mid);
     color: #fff;
-    padding: 0.45rem 0.65rem;
+    padding: 0.4rem 0.75rem;
     text-align: left;
   }
-  .rc-table td { padding: 0.45rem 0.65rem; border-bottom: 1px solid #dbeafe; }
+  .rc-table td { padding: 0.4rem 0.75rem; border-bottom: 1px solid #dbeafe; }
   .rc-table tr:last-child td { border-bottom: none; }
   .rc-table tr:nth-child(even) { background: var(--rc-pale); }
 
@@ -89,22 +88,22 @@
     background: var(--rc-dark);
     color: #fff;
     border-radius: var(--radius);
-    padding: 0.85rem 1.25rem;
+    padding: 0.75rem 1rem;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
     text-align: center;
   }
-  .rc-summary .val { font-size: 1.3rem; font-weight: 700; color: var(--rc-accent); }
-  .rc-summary .lbl { font-size: 0.72rem; opacity: 0.85; }
+  .rc-summary .val { font-size: 1.2rem; font-weight: 700; color: var(--rc-accent); }
+  .rc-summary .lbl { font-size: 0.7rem; opacity: 0.85; }
 
   .rc-comment {
     background: var(--rc-pale);
     border-left: 4px solid var(--rc-light);
     border-radius: 0 var(--radius) var(--radius) 0;
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
-    line-height: 1.6;
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
     color: var(--rc-dark);
   }
 
@@ -112,29 +111,31 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
-    margin-top: 1.25rem;
+    margin-top: 0.85rem;
   }
   .sig-line {
     border-top: 1px solid var(--rc-mid);
     padding-top: 0.3rem;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--rc-mid);
     text-align: center;
   }
 
-  /* ── Print: A5 portrait ── */
+  /* ── Print: A4 portrait, fit on ONE page ── */
   @media print {
-    .no-print        { display: none !important; }
-    .report-card     { border-color: #000; box-shadow: none; max-width: 100%; }
-    .rc-banner       { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-stripe       { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-summary      { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-table th     { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print     { display: none !important; }
+    .report-card  { border-color: #000; box-shadow: none; max-width: 100%; }
+    .rc-banner    { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-stripe    { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-summary   { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-table th  { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rc-table tr:nth-child(even) { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .info-cell       { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-comment      { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .badge           { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page            { size: A5 portrait; margin: 1cm; }
+    .info-cell    { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-comment   { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge        { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body    { height: 100%; }
+    .main-content { padding: 0 !important; margin: 0 !important; }
+    @page         { size: A4 portrait; margin: 1cm; }
   }
 </style>
 {% endblock %}

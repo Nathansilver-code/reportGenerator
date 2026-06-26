@@ -92,7 +92,7 @@ def get_division(total_marks, class_name=None):
         elif total_marks <= 33:
             return "4"
         else:
-            return "F"
+            return "U"
 
 
 def get_teacher_comment(average):

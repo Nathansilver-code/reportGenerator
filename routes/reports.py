@@ -4,6 +4,7 @@ from models import Student, Teacher
 from utils.grading import compute_student_results
 
 import io
+from datetime import datetime
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -84,12 +85,19 @@ def download_report_pdf(student_id):
     total_in_class = len(class_results)
     teacher        = student.teacher
 
+    # Safe year fallback
+    student_year = getattr(student, 'year', None) or datetime.utcnow().year
+
     buf = io.BytesIO()
+    # ── A4 portrait ──
     doc = SimpleDocTemplate(
-        buf, pagesize=A5,
-        leftMargin=1.2*cm, rightMargin=1.2*cm,
-        topMargin=1.2*cm, bottomMargin=1.2*cm
+        buf, pagesize=A4,
+        leftMargin=1.5*cm, rightMargin=1.5*cm,
+        topMargin=1.5*cm, bottomMargin=1.5*cm
     )
+
+    # A4 usable width = 21cm - 3cm margins = 18cm
+    PAGE_W = 18*cm
 
     NAVY  = colors.HexColor("#0d2b6e")
     BLUE  = colors.HexColor("#1a56b0")
@@ -97,18 +105,18 @@ def download_report_pdf(student_id):
     WHITE = colors.white
 
     title_style = ParagraphStyle("title",
-        fontName="Helvetica-Bold", fontSize=13,
-        textColor=WHITE, alignment=1, spaceAfter=2)
+        fontName="Helvetica-Bold", fontSize=16,
+        textColor=WHITE, alignment=1, spaceAfter=3)
     sub_style = ParagraphStyle("sub",
-        fontName="Helvetica", fontSize=8,
+        fontName="Helvetica", fontSize=10,
         textColor=WHITE, alignment=1, spaceAfter=4)
     section_style = ParagraphStyle("section",
-        fontName="Helvetica-Bold", fontSize=8,
-        textColor=BLUE, spaceBefore=8, spaceAfter=4)
+        fontName="Helvetica-Bold", fontSize=9,
+        textColor=BLUE, spaceBefore=8, spaceAfter=5)
     comment_style = ParagraphStyle("comment",
-        fontName="Helvetica", fontSize=8,
+        fontName="Helvetica", fontSize=9,
         textColor=colors.HexColor("#0d2b6e"),
-        leading=12, spaceBefore=4, spaceAfter=4)
+        leading=14, spaceBefore=4, spaceAfter=4)
 
     story = []
 
@@ -116,15 +124,15 @@ def download_report_pdf(student_id):
     banner_data = [
         [Paragraph("MARANATHA SCHOOLS", title_style)],
         [Paragraph(
-            f"Student Report Card  |  {student.term}  |  Academic Year {student.year}",
+            f"Student Report Card  |  {student.term}  |  Academic Year {student_year}",
             sub_style)],
     ]
-    banner = Table(banner_data, colWidths=[13*cm])
+    banner = Table(banner_data, colWidths=[PAGE_W])
     banner.setStyle(TableStyle([
-        ("BACKGROUND",   (0,0), (-1,-1), NAVY),
-        ("ALIGN",        (0,0), (-1,-1), "CENTER"),
-        ("TOPPADDING",   (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING",(0,0), (-1,-1), 8),
+        ("BACKGROUND",    (0,0), (-1,-1), NAVY),
+        ("ALIGN",         (0,0), (-1,-1), "CENTER"),
+        ("TOPPADDING",    (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
     ]))
     story.append(banner)
     story.append(Spacer(1, 0.3*cm))
@@ -133,20 +141,20 @@ def download_report_pdf(student_id):
     story.append(Paragraph("STUDENT INFORMATION", section_style))
     info_data = [
         ["Full Name",     student.full_name,  "Class",         student.class_name],
-        ["Term",          student.term,        "Academic Year", str(student.year)],
+        ["Term",          student.term,        "Academic Year", str(student_year)],
         ["Class Teacher", teacher.full_name,   "Position",      f"{position} / {total_in_class}"],
     ]
-    info_table = Table(info_data, colWidths=[2.8*cm, 4*cm, 2.8*cm, 3.4*cm])
+    info_table = Table(info_data, colWidths=[3.5*cm, 5.5*cm, 3.5*cm, 5.5*cm])
     info_table.setStyle(TableStyle([
-        ("FONTNAME",     (0,0), (-1,-1), "Helvetica"),
-        ("FONTNAME",     (0,0), (0,-1),  "Helvetica-Bold"),
-        ("FONTNAME",     (2,0), (2,-1),  "Helvetica-Bold"),
-        ("FONTSIZE",     (0,0), (-1,-1), 8),
-        ("BACKGROUND",   (0,0), (-1,-1), PALE),
-        ("GRID",         (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
-        ("TOPPADDING",   (0,0), (-1,-1), 4),
-        ("BOTTOMPADDING",(0,0), (-1,-1), 4),
-        ("LEFTPADDING",  (0,0), (-1,-1), 6),
+        ("FONTNAME",      (0,0), (-1,-1), "Helvetica"),
+        ("FONTNAME",      (0,0), (0,-1),  "Helvetica-Bold"),
+        ("FONTNAME",      (2,0), (2,-1),  "Helvetica-Bold"),
+        ("FONTSIZE",      (0,0), (-1,-1), 9),
+        ("BACKGROUND",    (0,0), (-1,-1), PALE),
+        ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
+        ("TOPPADDING",    (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("LEFTPADDING",   (0,0), (-1,-1), 6),
     ]))
     story.append(info_table)
     story.append(Spacer(1, 0.3*cm))
@@ -163,19 +171,19 @@ def download_report_pdf(student_id):
             details["remark"],
         ])
     subj_table = Table(subj_data,
-        colWidths=[3.5*cm, 2.5*cm, 1.5*cm, 1.5*cm, 4*cm],
+        colWidths=[5*cm, 3.5*cm, 2*cm, 2*cm, 5.5*cm],
         repeatRows=1)
     subj_table.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,0),  BLUE),
         ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
         ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
         ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
-        ("FONTSIZE",      (0,0), (-1,-1), 8),
+        ("FONTSIZE",      (0,0), (-1,-1), 9),
         ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
         ("ROWBACKGROUNDS",(0,1), (-1,-1), [WHITE, PALE]),
         ("ALIGN",         (1,0), (3,-1),  "CENTER"),
-        ("TOPPADDING",    (0,0), (-1,-1), 4),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+        ("TOPPADDING",    (0,0), (-1,-1), 5),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
         ("LEFTPADDING",   (0,0), (-1,-1), 6),
     ]))
     story.append(subj_table)
@@ -183,22 +191,22 @@ def download_report_pdf(student_id):
 
     # ── Summary ──
     summary_data = [[
-        Paragraph(f"<b><font color='#93c5fd' size=14>{computed['total']}</font></b><br/>"
-                  f"<font color='white' size=7>Total / {computed['max_total']}</font>",
+        Paragraph(f"<b><font color='#93c5fd' size=16>{computed['total']}</font></b><br/>"
+                  f"<font color='white' size=8>Total / {computed['max_total']}</font>",
                   ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{computed['aggregate_sum']}</font></b><br/>"
-                  f"<font color='white' size=7>Aggregate Sum</font>",
+        Paragraph(f"<b><font color='#93c5fd' size=16>{computed['aggregate_sum']}</font></b><br/>"
+                  f"<font color='white' size=8>Aggregate Sum</font>",
                   ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{computed['division']}</font></b><br/>"
-                  f"<font color='white' size=7>Division</font>",
+        Paragraph(f"<b><font color='#93c5fd' size=16>{computed['division']}</font></b><br/>"
+                  f"<font color='white' size=8>Division</font>",
                   ParagraphStyle("s", alignment=1)),
     ]]
-    summary_table = Table(summary_data, colWidths=[4.33*cm, 4.33*cm, 4.33*cm])
+    summary_table = Table(summary_data, colWidths=[6*cm, 6*cm, 6*cm])
     summary_table.setStyle(TableStyle([
-        ("BACKGROUND",   (0,0), (-1,-1), NAVY),
-        ("ALIGN",        (0,0), (-1,-1), "CENTER"),
-        ("TOPPADDING",   (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING",(0,0), (-1,-1), 8),
+        ("BACKGROUND",    (0,0), (-1,-1), NAVY),
+        ("ALIGN",         (0,0), (-1,-1), "CENTER"),
+        ("TOPPADDING",    (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
     ]))
     story.append(summary_table)
     story.append(Spacer(1, 0.3*cm))
@@ -210,14 +218,14 @@ def download_report_pdf(student_id):
 
     # ── Signatures ──
     sig_data = [["Class Teacher's Signature & Date", "Head Teacher's Signature & Date"]]
-    sig_table = Table(sig_data, colWidths=[6.5*cm, 6.5*cm])
+    sig_table = Table(sig_data, colWidths=[9*cm, 9*cm])
     sig_table.setStyle(TableStyle([
         ("FONTNAME",    (0,0), (-1,-1), "Helvetica"),
-        ("FONTSIZE",    (0,0), (-1,-1), 7),
+        ("FONTSIZE",    (0,0), (-1,-1), 8),
         ("TEXTCOLOR",   (0,0), (-1,-1), BLUE),
         ("LINEABOVE",   (0,0), (-1,-1), 0.5, BLUE),
         ("ALIGN",       (0,0), (-1,-1), "CENTER"),
-        ("TOPPADDING",  (0,0), (-1,-1), 4),
+        ("TOPPADDING",  (0,0), (-1,-1), 5),
     ]))
     story.append(sig_table)
 

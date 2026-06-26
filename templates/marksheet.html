@@ -3,15 +3,17 @@
 
 {% block extra_css %}
 <style>
-  @media print {
-    body             { font-size: 10pt; }
-    .no-print        { display: none !important; }
-    .print-header    { display: block !important; }
-    table            { font-size: 8pt; }
-    thead            { background: #1a6e3c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .badge           { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .analysis-section { page-break-before: always; }
-    @page            { size: A4 portrait; margin: 1.2cm; }
+ @media print {
+    body              { font-size: 9pt; }
+    .no-print         { display: none !important; }
+    .print-header     { display: block !important; text-align: center; }
+    .card             { box-shadow: none !important; border: none !important; padding: 0 !important; }
+    table             { font-size: 7.5pt; }
+    thead             { background: #1a56b0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge            { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .analysis-section { margin-top: 1rem; }
+    .analysis-table th { background: #1a56b0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page             { size: A4 portrait; margin: 1cm; }
   }
 
   .print-header { display: none; text-align: center; margin-bottom: 1rem; }
@@ -45,16 +47,15 @@
 
   {# ── PRINT HEADER ── #}
   <div class="print-header">
-    <h2 style="margin:0; font-size:1.3rem; text-transform:uppercase; letter-spacing:1px;">
-      Maranatha Schools
+    <h2 style="margin:0; font-size:1.5rem; text-transform:uppercase; letter-spacing:2px; font-weight:900;">
+      MARANATHA SCHOOLS MARKSHEET
     </h2>
-    <h3 style="margin:0.2rem 0; font-size:1rem;">Marksheet</h3>
-    <p style="margin:0.2rem 0;">
+    <p style="margin:0.3rem 0; font-size:0.9rem;">
       <strong>Class:</strong> {{ class_name }} &nbsp;|&nbsp;
       <strong>Term:</strong> {{ term }} &nbsp;|&nbsp;
       <strong>Year:</strong> {{ year }}
     </p>
-    <hr style="margin:0.5rem 0;"/>
+    <hr style="margin:0.5rem 0; border:1.5px solid #000;"/>
   </div>
 
   {# ── SCREEN HEADER ── #}

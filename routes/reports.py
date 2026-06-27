@@ -507,7 +507,7 @@ def download_pdf():
 
     total_students = len(results)
     t2_data = [["Division", "Number of Students", "Percentage"]]
-    for div in ["1", "2", "3", "4", "F"]:
+    for div in ["1", "2", "3", "4", "U"]:
         count = sum(1 for r in results if r["division"] == div)
         pct   = round((count / total_students) * 100, 1) if total_students > 0 else 0
         t2_data.append([div, str(count), f"{pct}%"])

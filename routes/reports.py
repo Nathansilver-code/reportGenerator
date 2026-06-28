@@ -440,9 +440,9 @@ def download_pdf():
 
     # Column widths for A4 portrait (19cm usable)
     if is_lower:
-        col_widths = [1*cm, 4*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.2*cm, 1.2*cm]
+        col_widths = [0.8*cm, 3*cm, 1.2*cm, 1*cm, 1.2*cm, 1*cm, 1.2*cm, 1*cm, 1.2*cm, 1*cm, 1.2*cm, 1*cm, 1.2*cm, 1*cm, 1.5*cm, 1*cm, 1*cm]
     else:
-        col_widths = [1*cm, 5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2*cm, 1.5*cm, 1.5*cm]
+        col_widths = [0.8*cm, 3.5*cm, 1.5*cm, 1.2*cm, 1.5*cm, 1.2*cm, 1.5*cm, 1.2*cm, 1.5*cm, 1.2*cm, 1.5*cm, 1.2*cm, 1.2*cm]
 
     main_table = Table(table_data, colWidths=col_widths, repeatRows=1)
     main_table.setStyle(TableStyle([

@@ -390,10 +390,10 @@ def download_pdf():
 
     if is_lower:
         subj_order   = ["Literacy A", "Literacy B", "English", "Mathematics", "R.E.", "Luganda"]
-        col_headers  = ["Pos.", "Name", "Lit A", "Lit B", "Eng", "Math", "R.E.", "Lug", "Total", "Agg", "Div"]
+        col_headers  = ["Pos.", "Name", "Lit A", "Grd", "Lit B", "Grd", "Eng", "Grd", "Math", "Grd", "R.E.", "Grd", "Lug", "Grd", "Total", "Agg", "Div"]
     else:
         subj_order   = ["English", "Mathematics", "Science", "Social Studies"]
-        col_headers  = ["Pos.", "Name", "Eng", "Math", "Sci", "SST", "Total", "Agg", "Div"]
+        col_headers  = ["Pos.", "Name", "Eng", "Grd", "Math", "Grd", "Sci", "Grd", "SST", "Grd", "Total", "Agg", "Div"]
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -434,6 +434,7 @@ def download_pdf():
         row = [str(r["position"]), r["full_name"]]
         for subj in subj_order:
             row.append(str(r["subjects"].get(subj, {}).get("mark", "-")))
+            row.append(str(r["subjects"].get(subj, {}).get("grade", "-")))
         row += [str(r["total"]), str(r["aggregate"]), r["division"]]
         table_data.append(row)
 

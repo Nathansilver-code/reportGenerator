@@ -77,9 +77,9 @@ def download_report_pdf(student_id):
         term=student.term
     ).all()
     class_results = []
-    for cm in classmates:
-        if cm.marks:
-            class_results.append({"student_id": cm.id, "total": cm.marks.total})
+    for classmate in classmates:
+        if classmate.marks:
+            class_results.append({"student_id": classmate.id, "total": classmate.marks.total})
     position_map   = _rank_students(class_results)
     position       = position_map.get(student_id, "-")
     total_in_class = len(class_results)
@@ -314,11 +314,11 @@ def report_card(student_id):
     ).all()
 
     class_results = []
-    for cm in classmates:
-        if cm.marks:
+    for classmate in classmates:
+        if classmate.marks:
             class_results.append({
-                "student_id": cm.id,
-                "total":      cm.marks.total,
+                "student_id": classmate.id,
+                "total":      classmate.marks.total,
             })
 
     position_map   = _rank_students(class_results)

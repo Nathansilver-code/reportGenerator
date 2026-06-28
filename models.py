@@ -112,15 +112,14 @@ class Mark(db.Model):
     lug   = db.Column(db.Float, nullable=False, default=0)  # Luganda
 
     @property
-def total(self):
-    """Sum depends on the student's class level."""
-    student = self.student
-    if student and student.class_name in LOWER_PRIMARY_CLASSES:
-        # P1-P3: Lit A, Lit B, English, Math, RE, Lug (max 600)
-        return (self.lit_a or 0) + (self.lit_b or 0) + (self.english or 0) + (self.math or 0) + (self.re or 0) + (self.lug or 0)
-    else:
-        # P4-P7: English, Math, Science, SST (max 400)
-        return (self.english or 0) + (self.math or 0) + (self.science or 0) + (self.sst or 0)
+    def total(self):
+        """Sum depends on the student's class level."""
+        student = self.student
+        if student and student.class_name in LOWER_PRIMARY_CLASSES:
+            return (self.lit_a or 0) + (self.lit_b or 0) + (self.english or 0) + (self.math or 0) + (self.re or 0) + (self.lug or 0)
+        else:
+            return (self.english or 0) + (self.math or 0) + (self.science or 0) + (self.sst or 0)
+
     @property
     def num_subjects(self):
         student = self.student

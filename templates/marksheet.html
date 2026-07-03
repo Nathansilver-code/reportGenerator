@@ -13,7 +13,7 @@
     .badge            { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .analysis-section { margin-top: 1rem; }
     .analysis-table th { background: #1a56b0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    @page             { size: A4 portrait; margin: 1cm; }
+    @page             { size: A4 landscape; margin: 1cm; }
   }
 
   .print-header { display: none; text-align: center; margin-bottom: 1rem; }
@@ -32,6 +32,8 @@
   .analysis-table th { background: var(--primary); color: #fff; padding: 0.5rem 0.75rem; text-align: left; }
   .analysis-table td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #e5e7eb; }
   .analysis-table tr:nth-child(even) { background: var(--light); }
+
+  .student-checkbox { cursor: pointer; width: 16px; height: 16px; }
 </style>
 {% endblock %}
 
@@ -39,8 +41,6 @@
 
 {% set is_lower = class_name in ["P1", "P2", "P3"] %}
 {% set subjects_list = ['Literacy A', 'Literacy B', 'English', 'Mathematics', 'R.E.', 'Luganda'] if is_lower else ['English', 'Mathematics', 'Science', 'Social Studies'] %}
-
-{# ── Compute year from current date ── #}
 {% set year = now.year if now is defined else 2026 %}
 
 <div class="main-content">
@@ -53,6 +53,7 @@
     <p style="margin:0.3rem 0; font-size:0.9rem;">
       <strong>Class:</strong> {{ class_name }} &nbsp;|&nbsp;
       <strong>Term:</strong> {{ term }} &nbsp;|&nbsp;
+      <strong>Exam:</strong> {{ exam_type }} &nbsp;|&nbsp;
       <strong>Year:</strong> {{ year }}
     </p>
     <hr style="margin:0.5rem 0; border:1.5px solid #000;"/>
@@ -65,23 +66,39 @@
         {{ class_name }} Marksheet
       </h1>
       <p class="text-muted">
-        {{ term }} &nbsp;|&nbsp; {{ year }} &nbsp;|&nbsp;
+        {{ term }} &nbsp;|&nbsp;
+        <span style="background:var(--primary); color:#fff; padding:0.15rem 0.5rem; border-radius:20px; font-size:0.8rem; font-weight:700;">
+          {{ exam_type }}
+        </span>
+        &nbsp;|&nbsp; {{ year }} &nbsp;|&nbsp;
         {{ results|length }} learner{{ 's' if results|length != 1 else '' }}
       </p>
     </div>
     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-      <button onclick="window.print()" class="btn btn-accent">🖨 Print Marksheet</button>
-      <a href="{{ url_for('reports.download_excel', class_name=class_name, term=term) }}" class="btn btn-outline">⬇ Excel</a>
-      <a href="{{ url_for('reports.download_pdf',   class_name=class_name, term=term) }}" class="btn btn-outline">⬇ PDF</a>
-      <a href="{{ url_for('reports.reports_home') }}"                                     class="btn btn-outline">← Change Class</a>
-      <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}" class="btn btn-primary">➕ Add Student</a>
+      <button onclick="window.print()" class="btn btn-accent">🖨 Print</button>
+      <a href="{{ url_for('reports.download_excel', class_name=class_name, term=term, exam_type=exam_type) }}" class="btn btn-outline">⬇ Excel</a>
+      <a href="{{ url_for('reports.download_pdf',   class_name=class_name, term=term, exam_type=exam_type) }}" class="btn btn-outline">⬇ PDF</a>
+      <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline">← Change</a>
+      <a href="{{ url_for('marks.register_student', class_name=class_name, term=term, exam_type=exam_type) }}" class="btn btn-primary">➕ Add Student</a>
     </div>
   </div>
 
   {% if results %}
+
+  {# ── BULK DOWNLOAD FORM ── #}
+  <form method="POST" action="{{ url_for('reports.bulk_download') }}" id="bulk-form">
+    <input type="hidden" name="exam_type" value="{{ exam_type }}" />
+
   <div class="card" style="padding:1rem;">
 
-    {# ── SUMMARY CARDS (screen only) ── #}
+    {# ── BULK DOWNLOAD CONTROLS ── #}
+    <div class="no-print" style="display:flex; gap:0.75rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap;">
+      <button type="button" onclick="toggleAll()" class="btn btn-outline btn-sm">☑ Select All</button>
+      <button type="submit" class="btn btn-primary btn-sm">⬇ Download Selected Reports (ZIP)</button>
+      <span id="selected-count" class="text-muted" style="font-size:0.85rem;">0 selected</span>
+    </div>
+
+    {# ── SUMMARY CARDS ── #}
     <div class="no-print grid-4" style="margin-bottom:1.5rem; gap:0.75rem;">
       {% set total_marks = results | map(attribute='total') | list %}
       {% set best  = total_marks | max %}
@@ -111,6 +128,7 @@
       <table>
         <thead>
           <tr>
+            <th class="no-print">☑</th>
             <th>Pos.</th>
             <th>Learner Name</th>
             {% if is_lower %}
@@ -136,6 +154,10 @@
         <tbody>
           {% for r in results %}
           <tr>
+            <td class="no-print">
+              <input type="checkbox" name="student_ids" value="{{ r.student_id }}"
+                     class="student-checkbox" onchange="updateCount()" />
+            </td>
             <td style="font-weight:700; color:var(--primary);">{{ r.position }}</td>
             <td style="font-weight:600; white-space:nowrap;">{{ r.full_name }}</td>
 
@@ -161,7 +183,8 @@
               </span>
             </td>
             <td class="no-print">
-              <a href="{{ url_for('reports.report_card', student_id=r.student_id) }}" class="btn btn-outline btn-sm">📄</a>
+              <a href="{{ url_for('reports.report_card', student_id=r.student_id, exam_type=exam_type) }}"
+                 class="btn btn-outline btn-sm">📄</a>
             </td>
           </tr>
           {% endfor %}
@@ -169,23 +192,15 @@
       </table>
     </div>
 
-    {# ════════════════════════════════════════════
-       ANALYSIS SECTION
-    ════════════════════════════════════════════ #}
+    {# ── ANALYSIS SECTION ── #}
     <div class="analysis-section">
 
-      {# ── TABLE 1: Subject ranking by D1+D2+C3 count ── #}
       <h3>Table 1: Subject Performance Ranking</h3>
       <table class="analysis-table">
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Subject</th>
-            <th>D1</th>
-            <th>D2</th>
-            <th>C3</th>
-            <th>D1+D2+C3</th>
-            <th>Average Mark</th>
+            <th>Rank</th><th>Subject</th><th>D1</th><th>D2</th>
+            <th>C3</th><th>D1+D2+C3</th><th>Average Mark</th>
           </tr>
         </thead>
         <tbody>
@@ -206,15 +221,12 @@
             {% set avg_mark = (ns.total_mark / ns.count) | round(1) if ns.count > 0 else 0 %}
             {% set _ = subject_stats.append({'subject': subj, 'd1': ns.d1, 'd2': ns.d2, 'c3': ns.c3, 'top': top, 'avg': avg_mark}) %}
           {% endfor %}
-
           {% set ranked = subject_stats | sort(attribute='top', reverse=True) %}
           {% for s in ranked %}
           <tr>
             <td style="font-weight:700;">{{ loop.index }}</td>
             <td>{{ s.subject }}</td>
-            <td>{{ s.d1 }}</td>
-            <td>{{ s.d2 }}</td>
-            <td>{{ s.c3 }}</td>
+            <td>{{ s.d1 }}</td><td>{{ s.d2 }}</td><td>{{ s.c3 }}</td>
             <td style="font-weight:700; color:var(--primary);">{{ s.top }}</td>
             <td>{{ s.avg }}</td>
           </tr>
@@ -222,19 +234,14 @@
         </tbody>
       </table>
 
-      {# ── TABLE 2: Division count ── #}
       <h3>Table 2: Division Summary</h3>
       <table class="analysis-table">
         <thead>
-          <tr>
-            <th>Division</th>
-            <th>Number of Students</th>
-            <th>Percentage</th>
-          </tr>
+          <tr><th>Division</th><th>Number of Students</th><th>Percentage</th></tr>
         </thead>
         <tbody>
           {% set total_students = results | length %}
-          {% for div in ['1', '2', '3', '4', 'F'] %}
+          {% for div in ['1', '2', '3', '4', 'F', 'U'] %}
             {% set ns = namespace(count=0) %}
             {% for r in results %}
               {% if r.division == div %}{% set ns.count = ns.count + 1 %}{% endif %}
@@ -246,24 +253,15 @@
             </tr>
           {% endfor %}
           <tr style="font-weight:700; background:var(--light);">
-            <td>Total</td>
-            <td>{{ total_students }}</td>
-            <td>100%</td>
+            <td>Total</td><td>{{ total_students }}</td><td>100%</td>
           </tr>
         </tbody>
       </table>
 
-      {# ── TABLE 3: Pass / Fail / Miss per subject ── #}
       <h3>Table 3: Subject Pass / Fail / Miss Analysis</h3>
       <table class="analysis-table">
         <thead>
-          <tr>
-            <th>Subject</th>
-            <th>Pass</th>
-            <th>Fail</th>
-            <th>Miss (00)</th>
-            <th>Total Sat</th>
-          </tr>
+          <tr><th>Subject</th><th>Pass</th><th>Fail</th><th>Miss (00)</th><th>Total Sat</th></tr>
         </thead>
         <tbody>
           {% for subj in subjects_list %}
@@ -292,15 +290,34 @@
         </tbody>
       </table>
 
-    </div>{# end analysis-section #}
+    </div>
 
   </div>
+  </form>
+
   {% else %}
   <div class="card" style="text-align:center; padding:3rem;">
-    <p class="text-muted">No results to display for {{ class_name }} {{ term }}.</p>
-    <a href="{{ url_for('marks.register_student', class_name=class_name, term=term) }}" class="btn btn-primary mt-2">➕ Add Students</a>
+    <p class="text-muted">No results to display for {{ class_name }} {{ term }} {{ exam_type }}.</p>
+    <a href="{{ url_for('marks.register_student', class_name=class_name, term=term, exam_type=exam_type) }}"
+       class="btn btn-primary mt-2">➕ Add Students</a>
   </div>
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function updateCount() {
+    const checked = document.querySelectorAll('.student-checkbox:checked').length;
+    document.getElementById('selected-count').textContent = checked + ' selected';
+  }
+
+  function toggleAll() {
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    const allChecked = [...checkboxes].every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateCount();
+  }
+</script>
 {% endblock %}

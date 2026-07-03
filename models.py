@@ -3,13 +3,9 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
-
-
 LOWER_PRIMARY_CLASSES = ["P1", "P2", "P3"]
-
-
 UPPER_PRIMARY_CLASSES = ["P4", "P5", "P6", "P7"]
-
+EXAM_TYPES = ["Mid Term", "End of Term"]
 
 class Teacher(UserMixin, db.Model):
     __tablename__ = "teachers"
@@ -18,19 +14,15 @@ class Teacher(UserMixin, db.Model):
     full_name     = db.Column(db.String(120), nullable=False)
     email         = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-
-    role = db.Column(db.String(20), nullable=False, default="teacher")
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    role          = db.Column(db.String(20), nullable=False, default="teacher")
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
     students = db.relationship("Student", backref="teacher", lazy=True)
 
     def set_password(self, password):
-        """Hash and store the password — never store plain text."""
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        """Return True if the supplied password matches the stored hash."""
         return check_password_hash(self.password_hash, password)
 
     @property
@@ -79,15 +71,31 @@ class Student(db.Model):
     full_name  = db.Column(db.String(150), nullable=False)
     class_name = db.Column(db.String(10), nullable=False)
     term       = db.Column(db.String(10), nullable=False, default="Term 1")
-    year       = db.Column(db.Integer,    nullable=False, default=datetime.utcnow().year)
+    year       = db.Column(db.Integer, nullable=False, default=datetime.utcnow().year)
     teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    marks = db.relationship("Mark", backref="student", uselist=False, lazy=True)
+    # uselist=True — one student can have multiple mark records (Mid Term + End of Term)
+    marks = db.relationship("Mark", backref="student", uselist=True, lazy=True)
 
     @property
     def is_lower_primary(self):
         return self.class_name in LOWER_PRIMARY_CLASSES
+
+    def get_marks(self, exam_type):
+        """Get marks for a specific exam type."""
+        for mark in self.marks:
+            if mark.exam_type == exam_type:
+                return mark
+        return None
+
+    @property
+    def mid_term_marks(self):
+        return self.get_marks("Mid Term")
+
+    @property
+    def end_term_marks(self):
+        return self.get_marks("End of Term")
 
     def __repr__(self):
         return f"<Student {self.full_name} | {self.class_name}>"
@@ -96,20 +104,23 @@ class Student(db.Model):
 class Mark(db.Model):
     __tablename__ = "marks"
 
-    id         = db.Column(db.Integer, primary_key=True)
+    id        = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"), nullable=False)
 
-    
+    # NEW: exam type field
+    exam_type = db.Column(db.String(20), nullable=False, default="Mid Term")
+
+    # Upper primary subjects
     english = db.Column(db.Float, nullable=False, default=0)
     math    = db.Column(db.Float, nullable=False, default=0)
     science = db.Column(db.Float, nullable=False, default=0)
     sst     = db.Column(db.Float, nullable=False, default=0)
 
-    
+    # Lower primary subjects
     lit_a = db.Column(db.Float, nullable=False, default=0)
     lit_b = db.Column(db.Float, nullable=False, default=0)
-    re    = db.Column(db.Float, nullable=False, default=0)  # Religious Education
-    lug   = db.Column(db.Float, nullable=False, default=0)  # Luganda
+    re    = db.Column(db.Float, nullable=False, default=0)
+    lug   = db.Column(db.Float, nullable=False, default=0)
 
     @property
     def total(self):
@@ -132,4 +143,4 @@ class Mark(db.Model):
         return self.total / self.num_subjects
 
     def __repr__(self):
-        return f"<Mark student_id={self.student_id} total={self.total}>"
+        return f"<Mark student_id={self.student_id} exam_type={self.exam_type} total={self.total}>"

@@ -10,7 +10,7 @@
       <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin:0;">Students</h1>
       <p class="text-muted">All learners you have registered</p>
     </div>
-    <a href="{{ url_for('marks.select_class') }}" class="btn btn-primary">Add Student</a>
+    <a href="{{ url_for('marks.select_class') }}" class="btn btn-primary">➕ Add Student</a>
   </div>
 
   <!-- Filter bar -->
@@ -42,12 +42,7 @@
 
   {% if students %}
 
-  {# Determine if ALL visible students are lower primary (to decide column headers).
-     If the list is mixed classes, each row renders its own subjects inline. #}
   {% set lower_classes = ["P1", "P2", "P3"] %}
-  {% set is_lower_view = selected_class in lower_classes %}
-  {% set is_upper_view = selected_class and selected_class not in lower_classes %}
-  {% set is_mixed      = not selected_class %}
 
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
@@ -57,7 +52,7 @@
       {% if selected_class %}
       <div style="display:flex; gap:0.5rem;">
         <a href="{{ url_for('reports.marksheet', class_name=selected_class, term=selected_term or 'Term 1') }}"
-           class="btn btn-primary btn-sm"> View Marksheet</a>
+           class="btn btn-primary btn-sm">📊 View Marksheet</a>
       </div>
       {% endif %}
     </div>
@@ -70,93 +65,92 @@
             <th>Full Name</th>
             <th>Class</th>
             <th>Term</th>
-
-            {% if is_lower_view %}
-              <th>Lit A</th>
-              <th>Lit B</th>
-              <th>English</th>
-              <th>Math</th>
-              <th>Luganda</th>
-              <th>R.E.</th>
-              <th>Total /600</th>
-            {% elif is_upper_view %}
-              <th>English</th>
-              <th>Math</th>
-              <th>Science</th>
-              <th>SST</th>
-              <th>Total /400</th>
-            {% else %}
-              <!-- Mixed: show a single Subjects summary column -->
-              <th>Subjects Summary</th>
-              <th>Total</th>
-            {% endif %}
-
+            <th>Mid Term</th>
+            <th>End of Term</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for student in students %}
           {% set s_lower = student.class_name in lower_classes %}
+
+          {# Get mid term and end of term marks #}
+          {% set mid_mark = namespace(found=none) %}
+          {% set end_mark = namespace(found=none) %}
+          {% for m in student.marks %}
+            {% if m.exam_type == 'Mid Term' %}{% set mid_mark.found = m %}{% endif %}
+            {% if m.exam_type == 'End of Term' %}{% set end_mark.found = m %}{% endif %}
+          {% endfor %}
+
           <tr>
             <td>{{ loop.index }}</td>
             <td style="font-weight:600;">{{ student.full_name }}</td>
             <td>{{ student.class_name }}</td>
             <td>{{ student.term }}</td>
 
-            {% if student.marks %}
-              {% if is_lower_view %}
-                <td>{{ student.marks.lit_a }}</td>
-                <td>{{ student.marks.lit_b }}</td>
-                <td>{{ student.marks.english }}</td>
-                <td>{{ student.marks.math }}</td>
-                <td>{{ student.marks.lug }}</td>
-                <td>{{ student.marks.re }}</td>
-                <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
-
-              {% elif is_upper_view %}
-                <td>{{ student.marks.english }}</td>
-                <td>{{ student.marks.math }}</td>
-                <td>{{ student.marks.science }}</td>
-                <td>{{ student.marks.sst }}</td>
-                <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
-
-              {% else %}
-                <!-- Mixed view: compact summary -->
-                <td class="text-muted" style="font-size:0.85rem;">
-                  {% if s_lower %}
-                    Lit A: {{ student.marks.lit_a }},
-                    Lit B: {{ student.marks.lit_b }},
-                    Eng: {{ student.marks.english }},
-                    Math: {{ student.marks.math }},
-                    Lug: {{ student.marks.lug }},
-                    R.E: {{ student.marks.re }}
-                  {% else %}
-                    Eng: {{ student.marks.english }},
-                    Math: {{ student.marks.math }},
-                    Sci: {{ student.marks.science }},
-                    SST: {{ student.marks.sst }}
-                  {% endif %}
-                </td>
-                <td style="font-weight:700; color:var(--primary);">{{ student.marks.total }}</td>
-              {% endif %}
-
-            {% else %}
-              <td colspan="{% if is_lower_view %}7{% elif is_upper_view %}5{% else %}2{% endif %}"
-                  class="text-muted text-center">No marks recorded</td>
-            {% endif %}
-
+            {# Mid Term status #}
             <td>
-              <div style="display:flex; gap:0.4rem;">
-                <a href="{{ url_for('reports.report_card', student_id=student.id) }}"
-                   class="btn btn-outline btn-sm"> Report</a>
-                <form method="POST"
-                      action="{{ url_for('marks.delete_student', student_id=student.id) }}"
-                      onsubmit="return confirm('Delete {{ student.full_name }}? This cannot be undone.');"
-                      style="margin:0;">
-                  <button type="submit" class="btn btn-danger btn-sm">🗑</button>
-                </form>
-              </div>
+              {% if mid_mark.found %}
+                <span style="color:var(--success); font-weight:600;">✔ Entered</span>
+                {% if s_lower %}
+                  <span class="text-muted" style="font-size:0.8rem; display:block;">
+                    Total: {{ mid_mark.found.total }}
+                  </span>
+                {% else %}
+                  <span class="text-muted" style="font-size:0.8rem; display:block;">
+                    Total: {{ mid_mark.found.total }}
+                  </span>
+                {% endif %}
+              {% else %}
+                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type='Mid Term') }}"
+                   class="btn btn-outline btn-sm">➕ Add Mid Term</a>
+              {% endif %}
             </td>
+
+            {# End of Term status #}
+            <td>
+              {% if end_mark.found %}
+                <span style="color:var(--success); font-weight:600;">✔ Entered</span>
+                <span class="text-muted" style="font-size:0.8rem; display:block;">
+                  Total: {{ end_mark.found.total }}
+                </span>
+              {% else %}
+                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type='End of Term') }}"
+                   class="btn btn-outline btn-sm">➕ Add End of Term</a>
+              {% endif %}
+            </td>
+
+{# Actions #}
+<td>
+  <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+    {% if mid_mark.found %}
+    <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Mid Term') }}"
+       class="btn btn-outline btn-sm">📄 Mid</a>
+    {% endif %}
+    {% if end_mark.found %}
+    <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='End of Term') }}"
+       class="btn btn-outline btn-sm">📄 End</a>
+    {% endif %}
+    {% if mid_mark.found or end_mark.found %}
+    <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Combined') }}"
+       class="btn btn-outline btn-sm">📄 Combined</a>
+    {% endif %}
+    {% if end_mark.found %}
+    <form method="POST"
+          action="{{ url_for('reports.delete_marks', mark_id=end_mark.found.id) }}"
+          onsubmit="return confirm('Delete End of Term marks for {{ student.full_name }}?');"
+          style="margin:0;">
+      <button type="submit" class="btn btn-danger btn-sm">🗑 End</button>
+    </form>
+    {% endif %}
+    <form method="POST"
+          action="{{ url_for('marks.delete_student', student_id=student.id) }}"
+          onsubmit="return confirm('Delete {{ student.full_name }} completely? This cannot be undone.');"
+          style="margin:0;">
+      <button type="submit" class="btn btn-danger btn-sm">🗑 All</button>
+    </form>
+  </div>
+</td>
           </tr>
           {% endfor %}
         </tbody>

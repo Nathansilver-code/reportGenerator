@@ -1,14 +1,6 @@
-<<<<<<< HEAD
 services:
   - type: web
     name: reportGenerator
     runtime: python
     buildCommand: pip install -r requirements.txt
-=======
-services:
-  - type: web
-    name: reportGenerator
-    runtime: python
-    buildCommand: pip install -r requirements.txt
->>>>>>> 552e9e81cb63452b0e8f79c5c9e347d7571dd5f1
-    startCommand: python -m gunicorn app:app
+    startCommand: flask db upgrade && python -m gunicorn app:app

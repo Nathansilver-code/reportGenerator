@@ -19,17 +19,26 @@
         <h1 style="font-family:'Merriweather',serif; color:var(--primary); font-size:1.3rem; margin:0;">
           Learner Registration
         </h1>
-        <p class="text-muted">{{ term }} &nbsp;|&nbsp; Enter marks out of 100 per subject</p>
+        <p class="text-muted">
+          {{ term }} &nbsp;|&nbsp;
+          <span style="background:var(--accent); color:var(--primary);
+                       padding:0.2rem 0.6rem; border-radius:20px;
+                       font-weight:700; font-size:0.85rem;">
+            {{ exam_type }}
+          </span>
+          &nbsp;|&nbsp; Enter marks out of 100 per subject
+        </p>
       </div>
     </div>
 
     <div class="card">
-      <h2 class="card-title"> Student Details &amp; Marks</h2>
+      <h2 class="card-title">📝 Student Details &amp; Marks</h2>
 
       <form method="POST" action="{{ url_for('marks.register_student') }}">
 
         <input type="hidden" name="class_name" value="{{ class_name }}" />
         <input type="hidden" name="term"       value="{{ term }}" />
+        <input type="hidden" name="exam_type"  value="{{ exam_type }}" />
 
         <div class="form-group">
           <label class="form-label" for="full_name">Learner's Full Name</label>
@@ -42,13 +51,12 @@
         </div>
 
         {% if is_lower %}
-        <!-- P1–P3: 6 subjects — Lit A, Lit B, English, Math, Luganda, R.E. -->
+        <!-- P1–P3: 6 subjects -->
         <div class="grid-2">
 
           <div class="form-group">
             <label class="form-label" for="lit_a">
-              Literacy A
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Literacy A <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="lit_a" name="lit_a" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -56,8 +64,7 @@
 
           <div class="form-group">
             <label class="form-label" for="lit_b">
-              Literacy B
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Literacy B <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="lit_b" name="lit_b" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -65,8 +72,7 @@
 
           <div class="form-group">
             <label class="form-label" for="english">
-              English Language
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              English Language <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="english" name="english" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -74,8 +80,7 @@
 
           <div class="form-group">
             <label class="form-label" for="math">
-              Mathematics
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Mathematics <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="math" name="math" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -83,8 +88,7 @@
 
           <div class="form-group">
             <label class="form-label" for="lug">
-              Luganda
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Luganda <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="lug" name="lug" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -92,8 +96,7 @@
 
           <div class="form-group">
             <label class="form-label" for="re">
-              Religious Education (R.E.)
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Religious Education (R.E.) <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="re" name="re" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -102,13 +105,12 @@
         </div>
 
         {% else %}
-        <!-- P4–P7: 4 subjects — English, Math, Science, SST -->
+        <!-- P4–P7: 4 subjects -->
         <div class="grid-2">
 
           <div class="form-group">
             <label class="form-label" for="english">
-              English Language
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              English Language <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="english" name="english" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -116,8 +118,7 @@
 
           <div class="form-group">
             <label class="form-label" for="math">
-              Mathematics
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Mathematics <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="math" name="math" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -125,8 +126,7 @@
 
           <div class="form-group">
             <label class="form-label" for="science">
-              Science
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Science <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="science" name="science" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -134,8 +134,7 @@
 
           <div class="form-group">
             <label class="form-label" for="sst">
-              Social Studies (SST)
-              <span class="text-muted" style="font-weight:400;">/100</span>
+              Social Studies (SST) <span class="text-muted" style="font-weight:400;">/100</span>
             </label>
             <input type="number" id="sst" name="sst" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
@@ -168,11 +167,11 @@
 {% block extra_js %}
 <script>
   {% if is_lower %}
-  const subjects  = ['lit_a', 'lit_b', 'english', 'math', 'lug', 're'];
-  const maxTotal  = 600;
+  const subjects = ['lit_a', 'lit_b', 'english', 'math', 'lug', 're'];
+  const maxTotal = 600;
   {% else %}
-  const subjects  = ['english', 'math', 'science', 'sst'];
-  const maxTotal  = 400;
+  const subjects = ['english', 'math', 'science', 'sst'];
+  const maxTotal = 400;
   {% endif %}
 
   const preview = document.getElementById('total-preview');
@@ -185,8 +184,8 @@
       if (isNaN(val)) { allFilled = false; }
       else            { total += val; }
     });
-    preview.textContent  = allFilled ? total.toFixed(1) + ' / ' + maxTotal : '—';
-    preview.style.color  = allFilled ? 'var(--success)' : 'var(--primary)';
+    preview.textContent = allFilled ? total.toFixed(1) + ' / ' + maxTotal : '—';
+    preview.style.color = allFilled ? 'var(--success)' : 'var(--primary)';
   }
 
   subjects.forEach(function(id) {

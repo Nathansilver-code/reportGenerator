@@ -9,11 +9,12 @@
     <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin-bottom:0.3rem;">
       📊 Marksheets &amp; Reports
     </h1>
-    <p class="text-muted mb-1">Select a class and term to view or print.</p>
+    <p class="text-muted mb-1">Select a class, term and exam type to view or print.</p>
 
     <div class="card mt-2">
       <h2 class="card-title">Generate Marksheet</h2>
       <form method="GET" action="{{ url_for('reports.marksheet') }}">
+
         <div class="form-group">
           <label class="form-label" for="class_name">Class</label>
           <select id="class_name" name="class_name" class="form-control" required>
@@ -23,6 +24,7 @@
             {% endfor %}
           </select>
         </div>
+
         <div class="form-group">
           <label class="form-label" for="term">Term</label>
           <select id="term" name="term" class="form-control">
@@ -31,7 +33,30 @@
             {% endfor %}
           </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+
+        <div class="form-group">
+          <label class="form-label">Exam Type</label>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.6rem; margin-top:0.4rem;">
+            {% for exam in exam_types %}
+            <label style="cursor:pointer;">
+              <input type="radio" name="exam_type" value="{{ exam }}"
+                     style="display:none;" class="exam-radio"
+                     {% if loop.first %}checked{% endif %}/>
+              <div class="exam-tile"
+                   style="border:2px solid {% if loop.first %}var(--primary){% else %}var(--border){% endif %};
+                          border-radius:var(--radius); text-align:center;
+                          padding:0.7rem 0.3rem; font-weight:700; font-size:0.82rem;
+                          background:{% if loop.first %}var(--primary){% else %}var(--white){% endif %};
+                          color:{% if loop.first %}var(--white){% else %}var(--text){% endif %};
+                          transition:all 0.2s; user-select:none;">
+                {{ exam }}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:0.5rem;">
           View Marksheet &rarr;
         </button>
       </form>
@@ -42,9 +67,29 @@
       <p class="text-muted">
         From the marksheet you can print the full class list. To print an individual
         report card, click the <strong>📄 Report</strong> button next to any student's name.
+        For a <strong>Combined Report</strong> showing both Mid Term and End of Term, select
+        <strong>Combined</strong> above.
       </p>
     </div>
 
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.exam-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.exam-tile').forEach(function(tile) {
+        tile.style.borderColor = 'var(--border)';
+        tile.style.background  = 'var(--white)';
+        tile.style.color       = 'var(--text)';
+      });
+      var tile = this.closest('label').querySelector('.exam-tile');
+      tile.style.borderColor = 'var(--primary)';
+      tile.style.background  = 'var(--primary)';
+      tile.style.color       = 'var(--white)';
+    });
+  });
+</script>
 {% endblock %}

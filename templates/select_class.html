@@ -9,14 +9,14 @@
     <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin-bottom:0.3rem;">
       Enter Marks
     </h1>
-    <p class="text-muted mb-1">Select the class and term, then register learners.</p>
+    <p class="text-muted mb-1">Select the class, term and exam type, then register learners.</p>
 
     <div class="card mt-2">
-      <h2 class="card-title"> Select Class &amp; Term</h2>
+      <h2 class="card-title">Select Class, Term &amp; Exam Type</h2>
 
       <form method="POST" action="{{ url_for('marks.select_class') }}">
 
-        
+        <!-- Class Selection -->
         <div class="form-group">
           <label class="form-label">Class (Primary Level)</label>
           <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:0.6rem; margin-top:0.4rem;">
@@ -35,7 +35,7 @@
           </div>
         </div>
 
-        
+        <!-- Term Selection -->
         <div class="form-group mt-2">
           <label class="form-label" for="term">Term</label>
           <select id="term" name="term" class="form-control" required>
@@ -45,15 +45,38 @@
           </select>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+        <!-- Exam Type Selection -->
+        <div class="form-group mt-2">
+          <label class="form-label">Exam Type</label>
+          <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:0.6rem; margin-top:0.4rem;">
+            {% for exam in exam_types %}
+            <label style="cursor:pointer;">
+              <input type="radio" name="exam_type" value="{{ exam }}"
+                     style="display:none;" class="exam-radio"
+                     {% if loop.first %}checked{% endif %}/>
+              <div class="exam-tile"
+                   style="border:2px solid {% if loop.first %}var(--primary){% else %}var(--border){% endif %};
+                          border-radius:var(--radius); text-align:center;
+                          padding:0.8rem 0.5rem; font-weight:700;
+                          background:{% if loop.first %}var(--primary){% else %}var(--white){% endif %};
+                          color:{% if loop.first %}var(--white){% else %}var(--text){% endif %};
+                          transition:all 0.2s; user-select:none;">
+                {{ exam }}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:1rem;">
           Proceed to Enter Marks &rarr;
         </button>
       </form>
     </div>
 
-    
+    <!-- View Existing Records -->
     <div class="card" style="background:#f0f9f4; border:1px solid #a9dfbf;">
-      <p style="font-weight:600; color:var(--primary); margin-bottom:0.5rem;"> View Existing Records</p>
+      <p style="font-weight:600; color:var(--primary); margin-bottom:0.5rem;">View Existing Records</p>
       <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
         <a href="{{ url_for('marks.list_students') }}" class="btn btn-outline btn-sm">All Students</a>
         <a href="{{ url_for('reports.reports_home') }}" class="btn btn-outline btn-sm">Marksheets &amp; Reports</a>
@@ -66,17 +89,30 @@
 
 {% block extra_js %}
 <script>
-  
+  // Class tile selection
   document.querySelectorAll('.class-radio').forEach(function(radio) {
     radio.addEventListener('change', function() {
-      // Reset all tiles
       document.querySelectorAll('.class-tile').forEach(function(tile) {
-        tile.style.borderColor   = 'var(--border)';
-        tile.style.background    = 'var(--white)';
-        tile.style.color         = 'var(--text)';
+        tile.style.borderColor = 'var(--border)';
+        tile.style.background  = 'var(--white)';
+        tile.style.color       = 'var(--text)';
       });
-      
       var tile = this.closest('label').querySelector('.class-tile');
+      tile.style.borderColor = 'var(--primary)';
+      tile.style.background  = 'var(--primary)';
+      tile.style.color       = 'var(--white)';
+    });
+  });
+
+  // Exam type tile selection
+  document.querySelectorAll('.exam-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      document.querySelectorAll('.exam-tile').forEach(function(tile) {
+        tile.style.borderColor = 'var(--border)';
+        tile.style.background  = 'var(--white)';
+        tile.style.color       = 'var(--text)';
+      });
+      var tile = this.closest('label').querySelector('.exam-tile');
       tile.style.borderColor = 'var(--primary)';
       tile.style.background  = 'var(--primary)';
       tile.style.color       = 'var(--white)';

@@ -216,20 +216,20 @@
           <thead>
             <tr>
               <th>Subject</th>
-              <th>Mid Mark</th>
-              <th>Mid Agg</th>
+              <th>Pre-End Mark</th>
+              <th>Pre-End Agg</th>
               <th>End Mark</th>
               <th>End Agg</th>
             </tr>
           </thead>
           <tbody>
             {% for subj in subjects %}
-            {% set mid_details = mid_computed.subjects[subj] if mid_computed and subj in mid_computed.subjects else none %}
+            {% set preend_details = preend_computed.subjects[subj] if preend_computed and subj in preend_computed.subjects else none %}
             {% set end_details = end_computed.subjects[subj] if end_computed and subj in end_computed.subjects else none %}
             <tr>
               <td style="font-weight:600;">{{ subj }}</td>
-              <td>{{ mid_details.mark if mid_details else '—' }}</td>
-              <td style="text-align:center;">{{ mid_details.aggregate if mid_details else '—' }}</td>
+              <td>{{ preend_details.mark if preend_details else '—' }}</td>
+              <td style="text-align:center;">{{ preend_details.aggregate if preend_details else '—' }}</td>
               <td>{{ end_details.mark if end_details else '—' }}</td>
               <td style="text-align:center;">{{ end_details.aggregate if end_details else '—' }}</td>
             </tr>
@@ -249,11 +249,11 @@
                 <div class="lbl">Total</div>
               </div>
               <div>
-                <div class="val">{{ mid_computed.aggregate_sum if mid_computed else '—' }}</div>
+                <div class="val">{{ preend_computed.aggregate_sum if mid_computed else '—' }}</div>
                 <div class="lbl">Aggregate</div>
               </div>
               <div>
-                <div class="val">{{ mid_computed.division if mid_computed else '—' }}</div>
+                <div class="val">{{ preend_computed.division if mid_computed else '—' }}</div>
                 <div class="lbl">Division</div>
               </div>
             </div>
@@ -284,8 +284,8 @@
         <div class="rc-comment">
           {% if end_computed %}
             {{ end_computed.comment }}
-          {% elif mid_computed %}
-            {{ mid_computed.comment }}
+          {% elif preend_computed %}
+            {{ preend_computed.comment }}
           {% endif %}
         </div>
       </div>

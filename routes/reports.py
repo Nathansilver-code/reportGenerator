@@ -19,7 +19,7 @@ reports_bp = Blueprint("reports", __name__)
 
 PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
-EXAM_TYPES      = ["Mid Term", "End of Term", "Combined"]
+EXAM_TYPES      = ["Mid Term", "Pre-End", "End of Term", "Combined"]
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -226,14 +226,14 @@ def _build_report_pdf(student, exam_type="Mid Term"):
 
 
 def _build_combined_report_pdf(student):
-    """Build combined Mid Term + End of Term report card PDF."""
-    mid_mark = _get_student_mark(student, "Mid Term")
+    
+    preend_mark = _get_student_mark(student, "Mid Term")
     end_mark = _get_student_mark(student, "End of Term")
 
-    if not mid_mark and not end_mark:
+    if not preend_mark and not end_mark:
         return None
 
-    mid_computed = compute_student_results(mid_mark) if mid_mark else None
+    mid_computed = compute_student_results(preend_mark) if preend_mark else None
     end_computed = compute_student_results(end_mark) if end_mark else None
 
     student_year = getattr(student, 'year', None) or datetime.utcnow().year
@@ -314,16 +314,16 @@ def _build_combined_report_pdf(student):
     # Combined Academic Performance Table
     story.append(Paragraph("ACADEMIC PERFORMANCE", section_style))
     subj_data = [["Subject",
-                  "Mid Mark", "Mid Agg",
+                  "Pre-end Mark", "Pre-end Agg",
                   "End Mark", "End Agg"]]
 
     for subj in subjects:
-        mid_details = mid_computed["subjects"].get(subj) if mid_computed else None
+        preend_details = preend_computed["subjects"].get(subj) if preend_computed else None
         end_details = end_computed["subjects"].get(subj) if end_computed else None
         subj_data.append([
             subj,
-            str(mid_details["mark"]) if mid_details else "-",
-            str(mid_details["aggregate"]) if mid_details else "-",
+            str(preend_details["mark"]) if preend_details else "-",
+            str(preend_details["aggregate"]) if preend_details else "-",
             str(end_details["mark"]) if end_details else "-",
             str(end_details["aggregate"]) if end_details else "-",
         ])
@@ -347,23 +347,25 @@ def _build_combined_report_pdf(student):
     story.append(Spacer(1, 0.3*cm))
 
     # Combined Summary
-    mid_total = mid_computed["total"] if mid_computed else "-"
-    mid_agg   = mid_computed["aggregate_sum"] if mid_computed else "-"
-    mid_div   = mid_computed["division"] if mid_computed else "-"
+    preend_total = preend_computed["total"] if preend_computed else "-"
+    preend_agg   = preend_computed["aggregate_sum"] if preend_computed else "-"
+    preend_div   = preend_computed["division"] if preend_computed else "-"
     end_total = end_computed["total"] if end_computed else "-"
     end_agg   = end_computed["aggregate_sum"] if end_computed else "-"
     end_div   = end_computed["division"] if end_computed else "-"
 
+    Paragraph(f"<b><font color='#93c5fd' size=12>Pre-End</font></b>", ...)
+
     summary_data = [[
         Paragraph(f"<b><font color='#93c5fd' size=12>Mid Term</font></b>",
                   ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{mid_total}</font></b><br/>"
+        Paragraph(f"<b><font color='#93c5fd' size=14>{preend_total}</font></b><br/>"
                   f"<font color='white' size=8>Total</font>",
                   ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{mid_agg}</font></b><br/>"
+        Paragraph(f"<b><font color='#93c5fd' size=14>{preend_agg}</font></b><br/>"
                   f"<font color='white' size=8>Aggregate</font>",
                   ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{mid_div}</font></b><br/>"
+        Paragraph(f"<b><font color='#93c5fd' size=14>{preeend_div}</font></b><br/>"
                   f"<font color='white' size=8>Division</font>",
                   ParagraphStyle("s", alignment=1)),
     ],[
@@ -495,30 +497,28 @@ def report_card(student_id):
 
     # Handle combined report separately
     if exam_type == "Combined":
-        mid_mark = _get_student_mark(student, "Mid Term")
-        end_mark = _get_student_mark(student, "End of Term")
+        preend_mark = _get_student_mark(student, "Pre-End")
+        end_mark    = _get_student_mark(student, "End of Term")
 
-        if not mid_mark and not end_mark:
+        if not preend_mark and not end_mark:
             flash("No marks found for this student.", "warning")
             return redirect(url_for("reports.reports_home"))
 
-        mid_computed = compute_student_results(mid_mark) if mid_mark else None
-        end_computed = compute_student_results(end_mark) if end_mark else None
+        preend_computed = compute_student_results(preend_mark) if preend_mark else None
+        end_computed    = compute_student_results(end_mark) if end_mark else None
 
         is_lower = student.class_name in LOWER_PRIMARY_CLASSES
-        if is_lower:
-            subjects = ["Literacy A", "Literacy B", "English", "Mathematics", "R.E.", "Luganda"]
-        else:
-            subjects = ["English", "Mathematics", "Science", "Social Studies"]
+        subjects = ["Literacy A", "Literacy B", "English", "Mathematics", "R.E.", "Luganda"] if is_lower \
+                   else ["English", "Mathematics", "Science", "Social Studies"]
 
         return render_template(
             "combined_report_card.html",
-            student      = student,
-            teacher      = teacher,
-            mid_computed = mid_computed,
-            end_computed = end_computed,
-            subjects     = subjects,
-            exam_type    = exam_type,
+            student         = student,
+            teacher         = teacher,
+            preend_computed = preend_computed,
+            end_computed    = end_computed,
+            subjects        = subjects,
+            exam_type       = exam_type,
         )
 @reports_bp.route("/delete-marks/<int:mark_id>", methods=["POST"])
 @login_required

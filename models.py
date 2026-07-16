@@ -5,7 +5,7 @@ from datetime import datetime
 
 LOWER_PRIMARY_CLASSES = ["P1", "P2", "P3"]
 UPPER_PRIMARY_CLASSES = ["P4", "P5", "P6", "P7"]
-EXAM_TYPES = ["Mid Term", "End of Term"]
+EXAM_TYPES = ["Mid Term", "Pre-End", "End of Term"]
 
 class Teacher(UserMixin, db.Model):
     __tablename__ = "teachers"
@@ -92,6 +92,10 @@ class Student(db.Model):
     @property
     def mid_term_marks(self):
         return self.get_marks("Mid Term")
+    
+    @property
+    def pre_end_marks(self):
+        return self.get_marks("Pre-End")
 
     @property
     def end_term_marks(self):

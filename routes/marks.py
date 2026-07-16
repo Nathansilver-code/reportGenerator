@@ -7,7 +7,7 @@ marks_bp = Blueprint("marks", __name__)
 
 PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
-EXAM_TYPES      = ["Mid Term", "End of Term"]
+EXAM_TYPES      = ["Mid Term", "Pre-End", "End of Term"]
 
 
 @marks_bp.route("/select-class", methods=["GET", "POST"])

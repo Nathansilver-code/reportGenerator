@@ -66,6 +66,7 @@
             <th>Class</th>
             <th>Term</th>
             <th>Mid Term</th>
+            <th>Pre-End</th>
             <th>End of Term</th>
             <th>Actions</th>
           </tr>
@@ -75,11 +76,13 @@
           {% set s_lower = student.class_name in lower_classes %}
 
           {# Get mid term and end of term marks #}
-          {% set mid_mark = namespace(found=none) %}
-          {% set end_mark = namespace(found=none) %}
+          {% set mid_mark    = namespace(found=none) %}
+          {% set preend_mark = namespace(found=none) %}
+          {% set end_mark    = namespace(found=none) %}
           {% for m in student.marks %}
-            {% if m.exam_type == 'Mid Term' %}{% set mid_mark.found = m %}{% endif %}
-            {% if m.exam_type == 'End of Term' %}{% set end_mark.found = m %}{% endif %}
+             {% if m.exam_type == 'Mid Term'    %}{% set mid_mark.found    = m %}{% endif %}
+             {% if m.exam_type == 'Pre-End'     %}{% set preend_mark.found = m %}{% endif %}
+             {% if m.exam_type == 'End of Term' %}{% set end_mark.found    = m %}{% endif %}
           {% endfor %}
 
           <tr>
@@ -90,19 +93,19 @@
 
             {# Mid Term status #}
             <td>
-              {% if mid_mark.found %}
+              {% if preend_mark.found %}
                 <span style="color:var(--success); font-weight:600;">✔ Entered</span>
                 {% if s_lower %}
                   <span class="text-muted" style="font-size:0.8rem; display:block;">
-                    Total: {{ mid_mark.found.total }}
+                    Total: {{ preend_mark.found.total }}
                   </span>
                 {% else %}
                   <span class="text-muted" style="font-size:0.8rem; display:block;">
-                    Total: {{ mid_mark.found.total }}
+                    Total: {{ preend_mark.found.total }}
                   </span>
                 {% endif %}
               {% else %}
-                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type='Mid Term') }}"
+                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type=' Term') }}"
                    class="btn btn-outline btn-sm">➕ Add Mid Term</a>
               {% endif %}
             </td>
@@ -131,7 +134,7 @@
     <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='End of Term') }}"
        class="btn btn-outline btn-sm">📄 End</a>
     {% endif %}
-    {% if mid_mark.found or end_mark.found %}
+    {% if preend_mark.found or end_mark.found %}
     <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Combined') }}"
        class="btn btn-outline btn-sm">📄 Combined</a>
     {% endif %}

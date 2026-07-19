@@ -1,5 +1,3 @@
-
-
 :root {
   --primary:      #0d2b6e;   /* Ink Navy — headers, nav, dark surfaces      */
   --primary-mid:  #1a56b0;   /* Academy Blue — buttons, links                */
@@ -56,7 +54,9 @@ a { color: var(--primary-mid); }
   border-radius: 4px;
 }
 
-
+/* =====================================================
+   Navigation Bar
+===================================================== */
 .navbar {
   background: var(--primary);
   padding: 0 2rem;
@@ -121,7 +121,9 @@ a { color: var(--primary-mid); }
 }
 .nav-link.btn-accent:hover { background: #e0b933; }
 
-
+/* =====================================================
+   Flash / Alert Messages
+===================================================== */
 .alert-container { padding: 1rem 2rem 0; max-width: 1200px; margin: 0 auto; }
 .alert {
   padding: 0.75rem 1.2rem;
@@ -139,10 +141,14 @@ a { color: var(--primary-mid); }
 .alert-warning { background:#fbf2d9; color:#7a5f10; border-left:4px solid var(--warning); }
 .alert-info    { background:var(--pale); color:#0d4a52; border-left:4px solid var(--info); }
 
- 
+/* =====================================================
+   Main Content Wrapper
+===================================================== */
 .main-content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
 
-
+/* =====================================================
+   Cards
+===================================================== */
 .card {
   background: var(--white);
   border: 1px solid var(--border);
@@ -161,7 +167,9 @@ a { color: var(--primary-mid); }
   border-bottom: 2px solid var(--gold);
 }
 
- 
+/* =====================================================
+   Forms
+===================================================== */
 .form-group { margin-bottom: 1.1rem; }
 .form-label { display: block; font-weight: 600; margin-bottom: 0.35rem; font-size: 0.85rem; color: var(--primary); }
 .form-control {
@@ -182,7 +190,9 @@ a { color: var(--primary-mid); }
 }
 select.form-control { cursor: pointer; }
 
-
+/* =====================================================
+   Buttons
+===================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -212,7 +222,9 @@ select.form-control { cursor: pointer; }
 .btn-outline:hover { background: var(--primary-mid); color: var(--white); text-decoration: none; }
 .btn-sm { padding: 0.35rem 0.85rem; font-size: 0.82rem; }
 
-
+/* =====================================================
+   Tables
+===================================================== */
 .table-wrapper { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 thead { background: var(--primary); color: var(--white); }
@@ -240,6 +252,9 @@ tbody td:nth-child(2) { font-family: var(--font-body); } /* keep name columns in
 .badge-p7, .badge-p8 { background: var(--gold); color: var(--primary); }
 .badge-f9 { background: var(--danger); }
 
+/* =====================================================
+   Selectable tiles (class / exam-type pickers)
+===================================================== */
 .class-tile, .exam-tile {
   border-radius: var(--radius);
   border: 2px solid var(--border);
@@ -251,7 +266,9 @@ tbody td:nth-child(2) { font-family: var(--font-body); } /* keep name columns in
   user-select: none;
 }
 
-
+/* =====================================================
+   Division stamp — signature element for report cards
+===================================================== */
 .division-stamp {
   display: inline-flex;
   flex-direction: column;
@@ -279,7 +296,9 @@ tbody td:nth-child(2) { font-family: var(--font-body); } /* keep name columns in
   color: var(--gold);
 }
 
-
+/* =====================================================
+   Utilities
+===================================================== */
 .text-muted { color: var(--muted); font-size: 0.87rem; }
 .mt-1 { margin-top: 0.5rem; }
 .mt-2 { margin-top: 1rem; }
@@ -293,7 +312,14 @@ tbody td:nth-child(2) { font-family: var(--font-body); } /* keep name columns in
   .navbar { padding: 0 1rem; flex-wrap: wrap; height: auto; }
 }
 
-
+/* =====================================================
+   Print Styles — hides nav & buttons when printing
+   (FIXED: this block was previously missing its
+   "@media print {" opening line, so .navbar/.no-print/
+   .print-header were applying at all times, not just
+   when printing.)
+===================================================== */
+@media print {
   .navbar, .no-print, .alert-container, footer { display: none !important; }
   body { background: white; }
   .card { box-shadow: none; }
@@ -301,7 +327,13 @@ tbody td:nth-child(2) { font-family: var(--font-body); } /* keep name columns in
 }
 .print-header { display: none; }
 
-
+/* =====================================================
+   Footer
+   (FIXED: this block was previously missing its
+   "footer {" opening line, so these declarations were
+   floating outside any selector and doing nothing.)
+===================================================== */
+footer {
   text-align: center;
   padding: 1.5rem;
   color: var(--muted);

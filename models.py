@@ -75,24 +75,27 @@ class Student(db.Model):
     teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # uselist=True — one student can have multiple mark records (Mid Term + End of Term)
     marks = db.relationship("Mark", backref="student", uselist=True, lazy=True)
 
     @property
     def is_lower_primary(self):
         return self.class_name in LOWER_PRIMARY_CLASSES
 
-    def get_marks(self, exam_type):
-        """Get marks for a specific exam type."""
+    def get_marks(self, exam_type, term=None, year=None):
+        """Get marks for a specific exam type, optionally filtered by term and year."""
         for mark in self.marks:
             if mark.exam_type == exam_type:
+                if term and mark.term != term:
+                    continue
+                if year and mark.year != year:
+                    continue
                 return mark
         return None
 
     @property
     def mid_term_marks(self):
         return self.get_marks("Mid Term")
-    
+
     @property
     def pre_end_marks(self):
         return self.get_marks("Pre-End")
@@ -108,11 +111,15 @@ class Student(db.Model):
 class Mark(db.Model):
     __tablename__ = "marks"
 
-    id        = db.Column(db.Integer, primary_key=True)
+    id         = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"), nullable=False)
 
-    # NEW: exam type field
+    # Exam type
     exam_type = db.Column(db.String(20), nullable=False, default="Mid Term")
+
+    # Term and year stored on mark so same student can have marks across terms
+    term = db.Column(db.String(10), nullable=False, default="Term 1")
+    year = db.Column(db.Integer, nullable=False, default=datetime.utcnow().year)
 
     # Upper primary subjects
     english = db.Column(db.Float, nullable=False, default=0)
@@ -147,4 +154,4 @@ class Mark(db.Model):
         return self.total / self.num_subjects
 
     def __repr__(self):
-        return f"<Mark student_id={self.student_id} exam_type={self.exam_type} total={self.total}>"
+        return f"<Mark student_id={self.student_id} exam_type={self.exam_type} term={self.term} year={self.year} total={self.total}>"

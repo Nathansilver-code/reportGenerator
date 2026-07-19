@@ -34,112 +34,130 @@
     <div class="card">
       <h2 class="card-title">📝 Student Details &amp; Marks</h2>
 
-      <form method="POST" action="{{ url_for('marks.register_student') }}">
+      <form method="POST" action="{{ url_for('marks.register_student') }}" id="main-form">
 
         <input type="hidden" name="class_name" value="{{ class_name }}" />
         <input type="hidden" name="term"       value="{{ term }}" />
         <input type="hidden" name="exam_type"  value="{{ exam_type }}" />
+        <input type="hidden" name="existing_student_id" id="existing_student_id" value="" />
 
+        {% if use_dropdown %}
+        <!-- Searchable dropdown for Pre-End and End of Term -->
+        <div class="form-group">
+          <label class="form-label">Learner's Name</label>
+
+          <!-- Toggle buttons -->
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+            <button type="button" id="btn-existing" onclick="showExisting()"
+                    class="btn btn-primary btn-sm">Select Existing Student</button>
+            <button type="button" id="btn-new" onclick="showNew()"
+                    class="btn btn-outline btn-sm">➕ Add New Student</button>
+          </div>
+
+          <!-- Searchable dropdown section -->
+          <div id="existing-section">
+            <div style="position:relative;">
+              <input type="text" id="student-search" class="form-control"
+                     placeholder="Type to search student name..."
+                     autocomplete="off" />
+              <div id="search-dropdown"
+                   style="position:absolute; top:100%; left:0; right:0; background:#fff;
+                          border:1px solid var(--border); border-radius:var(--radius);
+                          max-height:200px; overflow-y:auto; z-index:100; display:none;
+                          box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+              </div>
+            </div>
+            <div id="selected-student"
+                 style="display:none; margin-top:0.5rem; background:var(--light);
+                        border-radius:var(--radius); padding:0.5rem 0.75rem;
+                        display:flex; justify-content:space-between; align-items:center;">
+              <span id="selected-name" style="font-weight:600; color:var(--primary);"></span>
+              <button type="button" onclick="clearStudent()"
+                      style="background:none; border:none; cursor:pointer; color:var(--danger);">✕</button>
+            </div>
+            <!-- Hidden full_name field for existing student -->
+            <input type="hidden" name="full_name" id="full_name_hidden" value="" />
+          </div>
+
+          <!-- New student name section (hidden by default) -->
+          <div id="new-section" style="display:none;">
+            <input type="text" id="full_name_new" name="full_name_new" class="form-control"
+                   placeholder="e.g. Mugisha Robert" />
+            <p class="text-muted" style="font-size:0.82rem; margin-top:0.3rem;">
+              Only use this for a brand new student not yet in the system.
+            </p>
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Plain text input for Mid Term (new students) -->
         <div class="form-group">
           <label class="form-label" for="full_name">Learner's Full Name</label>
           <input type="text" id="full_name" name="full_name" class="form-control"
                  placeholder="e.g. Mugisha Robert" required />
         </div>
+        {% endif %}
 
         <div style="margin-top:1.25rem; margin-bottom:0.5rem;">
           <p style="font-weight:600; color:var(--primary);">📝 Subject Marks (0 – 100)</p>
         </div>
 
         {% if is_lower %}
-        <!-- P1–P3: 6 subjects -->
         <div class="grid-2">
-
           <div class="form-group">
-            <label class="form-label" for="lit_a">
-              Literacy A <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="lit_a">Literacy A <span class="text-muted">/100</span></label>
             <input type="number" id="lit_a" name="lit_a" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="lit_b">
-              Literacy B <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="lit_b">Literacy B <span class="text-muted">/100</span></label>
             <input type="number" id="lit_b" name="lit_b" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="english">
-              English Language <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="english">English Language <span class="text-muted">/100</span></label>
             <input type="number" id="english" name="english" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="math">
-              Mathematics <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="math">Mathematics <span class="text-muted">/100</span></label>
             <input type="number" id="math" name="math" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="lug">
-              Luganda <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="lug">Luganda <span class="text-muted">/100</span></label>
             <input type="number" id="lug" name="lug" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="re">
-              Religious Education (R.E.) <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="re">R.E. <span class="text-muted">/100</span></label>
             <input type="number" id="re" name="re" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
         </div>
 
         {% else %}
-        <!-- P4–P7: 4 subjects -->
         <div class="grid-2">
-
           <div class="form-group">
-            <label class="form-label" for="english">
-              English Language <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="english">English Language <span class="text-muted">/100</span></label>
             <input type="number" id="english" name="english" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="math">
-              Mathematics <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="math">Mathematics <span class="text-muted">/100</span></label>
             <input type="number" id="math" name="math" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="science">
-              Science <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="science">Science <span class="text-muted">/100</span></label>
             <input type="number" id="science" name="science" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
           <div class="form-group">
-            <label class="form-label" for="sst">
-              Social Studies (SST) <span class="text-muted" style="font-weight:400;">/100</span>
-            </label>
+            <label class="form-label" for="sst">Social Studies (SST) <span class="text-muted">/100</span></label>
             <input type="number" id="sst" name="sst" class="form-control"
                    min="0" max="100" step="0.5" placeholder="0 – 100" required />
           </div>
-
         </div>
         {% endif %}
 
@@ -177,12 +195,11 @@
   const preview = document.getElementById('total-preview');
 
   function updateTotal() {
-    let total     = 0;
-    let allFilled = true;
+    let total = 0, allFilled = true;
     subjects.forEach(function(id) {
       const val = parseFloat(document.getElementById(id).value);
-      if (isNaN(val)) { allFilled = false; }
-      else            { total += val; }
+      if (isNaN(val)) allFilled = false;
+      else total += val;
     });
     preview.textContent = allFilled ? total.toFixed(1) + ' / ' + maxTotal : '—';
     preview.style.color = allFilled ? 'var(--success)' : 'var(--primary)';
@@ -191,5 +208,114 @@
   subjects.forEach(function(id) {
     document.getElementById(id).addEventListener('input', updateTotal);
   });
+
+  {% if use_dropdown %}
+  // ── Searchable dropdown logic ──
+  let allStudents = [];
+  let selectedStudentId = null;
+
+  // Load students from API
+  fetch("{{ url_for('marks.api_students') }}?class_name={{ class_name }}&term={{ term }}")
+    .then(r => r.json())
+    .then(data => { allStudents = data; });
+
+  const searchInput    = document.getElementById('student-search');
+  const dropdown       = document.getElementById('search-dropdown');
+  const selectedDiv    = document.getElementById('selected-student');
+  const selectedName   = document.getElementById('selected-name');
+  const fullNameHidden = document.getElementById('full_name_hidden');
+  const studentIdInput = document.getElementById('existing_student_id');
+
+  searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    if (!query) { dropdown.style.display = 'none'; return; }
+
+    const filtered = allStudents.filter(s =>
+      s.full_name.toLowerCase().includes(query)
+    );
+
+    if (filtered.length === 0) {
+      dropdown.innerHTML = '<div style="padding:0.5rem 0.75rem; color:var(--muted);">No students found</div>';
+    } else {
+      dropdown.innerHTML = filtered.map(s => `
+        <div onclick="selectStudent(${s.id}, '${s.full_name}')"
+             style="padding:0.5rem 0.75rem; cursor:pointer; border-bottom:1px solid var(--border);"
+             onmouseover="this.style.background='var(--light)'"
+             onmouseout="this.style.background='#fff'">
+          ${s.full_name}
+          <span style="font-size:0.75rem; color:var(--muted); margin-left:0.5rem;">${s.term}</span>
+        </div>
+      `).join('');
+    }
+    dropdown.style.display = 'block';
+  });
+
+  function selectStudent(id, name) {
+    selectedStudentId        = id;
+    studentIdInput.value     = id;
+    fullNameHidden.value     = name;
+    selectedName.textContent = name;
+    selectedDiv.style.display = 'flex';
+    searchInput.value        = '';
+    dropdown.style.display   = 'none';
+  }
+
+  function clearStudent() {
+    selectedStudentId        = null;
+    studentIdInput.value     = '';
+    fullNameHidden.value     = '';
+    selectedName.textContent = '';
+    selectedDiv.style.display = 'none';
+  }
+
+  function showExisting() {
+    document.getElementById('existing-section').style.display = 'block';
+    document.getElementById('new-section').style.display = 'none';
+    document.getElementById('btn-existing').className = 'btn btn-primary btn-sm';
+    document.getElementById('btn-new').className = 'btn btn-outline btn-sm';
+  }
+
+  function showNew() {
+    document.getElementById('existing-section').style.display = 'none';
+    document.getElementById('new-section').style.display = 'block';
+    document.getElementById('btn-existing').className = 'btn btn-outline btn-sm';
+    document.getElementById('btn-new').className = 'btn btn-primary btn-sm';
+    clearStudent();
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  // Form validation before submit
+  document.getElementById('main-form').addEventListener('submit', function(e) {
+    const existingSection = document.getElementById('existing-section');
+    const newSection      = document.getElementById('new-section');
+
+    if (existingSection.style.display !== 'none') {
+      // Existing student mode — must have selected a student
+      if (!studentIdInput.value) {
+        e.preventDefault();
+        alert('Please select a student from the dropdown or switch to Add New Student.');
+        return;
+      }
+      // Set full_name from hidden field
+      fullNameHidden.value = selectedName.textContent;
+    } else {
+      // New student mode — must have typed a name
+      const newName = document.getElementById('full_name_new').value.trim();
+      if (!newName) {
+        e.preventDefault();
+        alert('Please enter the student name.');
+        return;
+      }
+      fullNameHidden.value = newName;
+      studentIdInput.value = '';
+    }
+  });
+  {% endif %}
 </script>
 {% endblock %}

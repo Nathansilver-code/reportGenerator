@@ -25,7 +25,6 @@ EXAM_TYPES      = ["Mid Term", "Pre-End", "End of Term", "Combined"]
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _get_student_mark(student, exam_type):
-    """Get a specific mark record for a student by exam type."""
     for mark in student.marks:
         if mark.exam_type == exam_type:
             return mark
@@ -75,7 +74,6 @@ def _get_marksheet_data(class_name, term, exam_type="Mid Term"):
 
 
 def _build_report_pdf(student, exam_type="Mid Term"):
-    """Build a single report card PDF and return bytes."""
     mark = _get_student_mark(student, exam_type)
     if not mark:
         return None
@@ -112,12 +110,9 @@ def _build_report_pdf(student, exam_type="Mid Term"):
 
     story = []
 
-    # Banner
-    banner = Table([[
-        Paragraph("MARANATHA SCHOOLS", title_style)],
-        [Paragraph(
-            f"Student Report Card  |  {exam_type}  |  {student.term}  |  {student_year}",
-            sub_style)],
+    banner = Table([
+        [Paragraph("MARANATHA SCHOOLS", title_style)],
+        [Paragraph(f"Student Report Card  |  {exam_type}  |  {student.term}  |  {student_year}", sub_style)],
     ], colWidths=[PAGE_W])
     banner.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,-1), NAVY),
@@ -128,7 +123,6 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     story.append(banner)
     story.append(Spacer(1, 0.3*cm))
 
-    # Student Info — no position
     story.append(Paragraph("STUDENT INFORMATION", section_style))
     info_data = [
         ["Full Name",     student.full_name,  "Class",         student.class_name],
@@ -150,7 +144,6 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     story.append(info_table)
     story.append(Spacer(1, 0.3*cm))
 
-    # Academic Performance
     story.append(Paragraph("ACADEMIC PERFORMANCE", section_style))
     subj_data = [["Subject", "Marks (/100)", "Grade", "Agg.", "Remark"]]
     for subj, details in computed["subjects"].items():
@@ -161,8 +154,7 @@ def _build_report_pdf(student, exam_type="Mid Term"):
             str(details["aggregate"]),
             details["remark"],
         ])
-    subj_table = Table(subj_data,
-        colWidths=[5*cm, 3.5*cm, 2*cm, 2*cm, 5.5*cm], repeatRows=1)
+    subj_table = Table(subj_data, colWidths=[5*cm, 3.5*cm, 2*cm, 2*cm, 5.5*cm], repeatRows=1)
     subj_table.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,0),  BLUE),
         ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
@@ -179,7 +171,6 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     story.append(subj_table)
     story.append(Spacer(1, 0.3*cm))
 
-    # Summary
     summary_data = [[
         Paragraph(f"<b><font color='#93c5fd' size=16>{computed['total']}</font></b><br/>"
                   f"<font color='white' size=8>Total / {computed['max_total']}</font>",
@@ -201,12 +192,10 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     story.append(summary_table)
     story.append(Spacer(1, 0.3*cm))
 
-    # Comment
     story.append(Paragraph("CLASS TEACHER'S COMMENT", section_style))
     story.append(Paragraph(computed["comment"], comment_style))
     story.append(Spacer(1, 0.5*cm))
 
-    # Signatures
     sig_table = Table(
         [["Class Teacher's Signature & Date", "Head Teacher's Signature & Date"]],
         colWidths=[9*cm, 9*cm])
@@ -226,15 +215,14 @@ def _build_report_pdf(student, exam_type="Mid Term"):
 
 
 def _build_combined_report_pdf(student):
-    
-    preend_mark = _get_student_mark(student, "Mid Term")
-    end_mark = _get_student_mark(student, "End of Term")
+    preend_mark = _get_student_mark(student, "Pre-End")
+    end_mark    = _get_student_mark(student, "End of Term")
 
     if not preend_mark and not end_mark:
         return None
 
-    mid_computed = compute_student_results(preend_mark) if preend_mark else None
-    end_computed = compute_student_results(end_mark) if end_mark else None
+    preend_computed = compute_student_results(preend_mark) if preend_mark else None
+    end_computed    = compute_student_results(end_mark) if end_mark else None
 
     student_year = getattr(student, 'year', None) or datetime.utcnow().year
     teacher      = student.teacher
@@ -245,8 +233,8 @@ def _build_combined_report_pdf(student):
     else:
         subjects = ["English", "Mathematics", "Science", "Social Studies"]
 
-    buf  = io.BytesIO()
-    doc  = SimpleDocTemplate(
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
         buf, pagesize=A4,
         leftMargin=1.5*cm, rightMargin=1.5*cm,
         topMargin=1.5*cm, bottomMargin=1.5*cm
@@ -273,12 +261,9 @@ def _build_combined_report_pdf(student):
 
     story = []
 
-    # Banner
     banner = Table([
         [Paragraph("MARANATHA SCHOOLS", title_style)],
-        [Paragraph(
-            f"Combined Report Card  |  {student.term}  |  {student_year}",
-            sub_style)],
+        [Paragraph(f"Combined Report Card  |  {student.term}  |  {student_year}", sub_style)],
     ], colWidths=[PAGE_W])
     banner.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,-1), NAVY),
@@ -289,7 +274,6 @@ def _build_combined_report_pdf(student):
     story.append(banner)
     story.append(Spacer(1, 0.3*cm))
 
-    # Student Info
     story.append(Paragraph("STUDENT INFORMATION", section_style))
     info_data = [
         ["Full Name",     student.full_name,  "Class",         student.class_name],
@@ -311,15 +295,11 @@ def _build_combined_report_pdf(student):
     story.append(info_table)
     story.append(Spacer(1, 0.3*cm))
 
-    # Combined Academic Performance Table
     story.append(Paragraph("ACADEMIC PERFORMANCE", section_style))
-    subj_data = [["Subject",
-                  "Pre-end Mark", "Pre-end Agg",
-                  "End Mark", "End Agg"]]
-
+    subj_data = [["Subject", "Pre-End Mark", "Pre-End Agg", "End Mark", "End Agg"]]
     for subj in subjects:
         preend_details = preend_computed["subjects"].get(subj) if preend_computed else None
-        end_details = end_computed["subjects"].get(subj) if end_computed else None
+        end_details    = end_computed["subjects"].get(subj) if end_computed else None
         subj_data.append([
             subj,
             str(preend_details["mark"]) if preend_details else "-",
@@ -328,8 +308,7 @@ def _build_combined_report_pdf(student):
             str(end_details["aggregate"]) if end_details else "-",
         ])
 
-    subj_table = Table(subj_data,
-        colWidths=[5*cm, 3*cm, 2.5*cm, 3*cm, 2.5*cm], repeatRows=1)
+    subj_table = Table(subj_data, colWidths=[5*cm, 3*cm, 2.5*cm, 3*cm, 2.5*cm], repeatRows=1)
     subj_table.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,0),  BLUE),
         ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
@@ -346,18 +325,15 @@ def _build_combined_report_pdf(student):
     story.append(subj_table)
     story.append(Spacer(1, 0.3*cm))
 
-    # Combined Summary
     preend_total = preend_computed["total"] if preend_computed else "-"
     preend_agg   = preend_computed["aggregate_sum"] if preend_computed else "-"
     preend_div   = preend_computed["division"] if preend_computed else "-"
-    end_total = end_computed["total"] if end_computed else "-"
-    end_agg   = end_computed["aggregate_sum"] if end_computed else "-"
-    end_div   = end_computed["division"] if end_computed else "-"
-
-    Paragraph(f"<b><font color='#93c5fd' size=12>Pre-End</font></b>", ...)
+    end_total    = end_computed["total"] if end_computed else "-"
+    end_agg      = end_computed["aggregate_sum"] if end_computed else "-"
+    end_div      = end_computed["division"] if end_computed else "-"
 
     summary_data = [[
-        Paragraph(f"<b><font color='#93c5fd' size=12>Mid Term</font></b>",
+        Paragraph("<b><font color='#93c5fd' size=12>Pre-End</font></b>",
                   ParagraphStyle("s", alignment=1)),
         Paragraph(f"<b><font color='#93c5fd' size=14>{preend_total}</font></b><br/>"
                   f"<font color='white' size=8>Total</font>",
@@ -365,11 +341,11 @@ def _build_combined_report_pdf(student):
         Paragraph(f"<b><font color='#93c5fd' size=14>{preend_agg}</font></b><br/>"
                   f"<font color='white' size=8>Aggregate</font>",
                   ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{preeend_div}</font></b><br/>"
+        Paragraph(f"<b><font color='#93c5fd' size=14>{preend_div}</font></b><br/>"
                   f"<font color='white' size=8>Division</font>",
                   ParagraphStyle("s", alignment=1)),
     ],[
-        Paragraph(f"<b><font color='#93c5fd' size=12>End of Term</font></b>",
+        Paragraph("<b><font color='#93c5fd' size=12>End of Term</font></b>",
                   ParagraphStyle("s", alignment=1)),
         Paragraph(f"<b><font color='#93c5fd' size=14>{end_total}</font></b><br/>"
                   f"<font color='white' size=8>Total</font>",
@@ -391,13 +367,11 @@ def _build_combined_report_pdf(student):
     story.append(summary_table)
     story.append(Spacer(1, 0.3*cm))
 
-    # Comment based on end of term if available, else mid term
-    best_computed = end_computed or mid_computed
+    best_computed = end_computed or preend_computed
     story.append(Paragraph("CLASS TEACHER'S COMMENT", section_style))
     story.append(Paragraph(best_computed["comment"], comment_style))
     story.append(Spacer(1, 0.5*cm))
 
-    # Signatures
     sig_table = Table(
         [["Class Teacher's Signature & Date", "Head Teacher's Signature & Date"]],
         colWidths=[9*cm, 9*cm])
@@ -495,7 +469,6 @@ def report_card(student_id):
     exam_type = request.args.get("exam_type", "Mid Term")
     teacher   = student.teacher
 
-    # Handle combined report separately
     if exam_type == "Combined":
         preend_mark = _get_student_mark(student, "Pre-End")
         end_mark    = _get_student_mark(student, "End of Term")
@@ -508,8 +481,8 @@ def report_card(student_id):
         end_computed    = compute_student_results(end_mark) if end_mark else None
 
         is_lower = student.class_name in LOWER_PRIMARY_CLASSES
-        subjects = ["Literacy A", "Literacy B", "English", "Mathematics", "R.E.", "Luganda"] if is_lower \
-                   else ["English", "Mathematics", "Science", "Social Studies"]
+        subjects = ["Literacy A", "Literacy B", "English", "Mathematics", "R.E.", "Luganda"] \
+                   if is_lower else ["English", "Mathematics", "Science", "Social Studies"]
 
         return render_template(
             "combined_report_card.html",
@@ -520,28 +493,8 @@ def report_card(student_id):
             subjects        = subjects,
             exam_type       = exam_type,
         )
-@reports_bp.route("/delete-marks/<int:mark_id>", methods=["POST"])
-@login_required
-def delete_marks(mark_id):
-    mark    = Mark.query.get_or_404(mark_id)
-    student = mark.student
 
-    # Only allow deleting if teacher owns the student or is admin
-    if not current_user.is_admin and student.teacher_id != current_user.id:
-        abort(403)
-
-    exam_type  = mark.exam_type
-    class_name = student.class_name
-    term       = student.term
-
-    db.session.delete(mark)
-    db.session.commit()
-
-    flash(f"✔ {exam_type} marks deleted for {student.full_name}.", "info")
-    return redirect(url_for("marks.list_students",
-                            class_name=class_name, term=term))
-
-    # Handle Mid Term or End of Term
+    # Handle Mid Term, Pre-End or End of Term
     mark = _get_student_mark(student, exam_type)
     if not mark:
         flash(f"No {exam_type} marks found for this student.", "warning")
@@ -556,6 +509,27 @@ def delete_marks(mark_id):
         exam_type = exam_type,
         teacher   = teacher,
     )
+
+
+@reports_bp.route("/delete-marks/<int:mark_id>", methods=["POST"])
+@login_required
+def delete_marks(mark_id):
+    mark    = Mark.query.get_or_404(mark_id)
+    student = mark.student
+
+    if not current_user.is_admin and student.teacher_id != current_user.id:
+        abort(403)
+
+    exam_type  = mark.exam_type
+    class_name = student.class_name
+    term       = student.term
+
+    db.session.delete(mark)
+    db.session.commit()
+
+    flash(f"✔ {exam_type} marks deleted for {student.full_name}.", "info")
+    return redirect(url_for("marks.list_students",
+                            class_name=class_name, term=term))
 
 
 @reports_bp.route("/report-card/<int:student_id>/pdf")
@@ -584,7 +558,6 @@ def download_report_pdf(student_id):
 @reports_bp.route("/bulk-download", methods=["POST"])
 @login_required
 def bulk_download():
-    """Download multiple report cards as a zip file."""
     student_ids = request.form.getlist("student_ids")
     exam_type   = request.form.get("exam_type", "Mid Term")
 
@@ -732,7 +705,6 @@ def download_pdf():
     story.append(main_table)
     story.append(Spacer(1, 0.4*cm))
 
-    # Table 1: Subject Performance Ranking
     story.append(Paragraph("Table 1: Subject Performance Ranking", section_style))
     subject_stats = []
     for subj in subj_order:
@@ -772,7 +744,6 @@ def download_pdf():
     story.append(t1)
     story.append(Spacer(1, 0.3*cm))
 
-    # Table 2: Division Summary
     story.append(Paragraph("Table 2: Division Summary", section_style))
     total_students = len(results)
     t2_data = [["Division", "Number of Students", "Percentage"]]
@@ -800,7 +771,6 @@ def download_pdf():
     story.append(t2)
     story.append(Spacer(1, 0.3*cm))
 
-    # Table 3: Pass/Fail/Miss
     story.append(Paragraph("Table 3: Subject Pass / Fail / Miss Analysis", section_style))
     t3_data = [["Subject", "Pass", "Fail", "Miss (00)", "Total Sat"]]
     for subj in subj_order:

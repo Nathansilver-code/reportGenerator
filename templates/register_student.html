@@ -185,12 +185,12 @@
 {% block extra_js %}
 <script>
   {% if is_lower %}
-  const subjects = ['lit_a', 'lit_b', 'english', 'math', 'lug', 're'];
-  const maxTotal = 600;
-  {% else %}
-  const subjects = ['english', 'math', 'science', 'sst'];
-  const maxTotal = 400;
-  {% endif %}
+var subjects = ['lit_a', 'lit_b', 'english', 'math', 'lug', 're'];
+var maxTotal = 600;
+{% else %}
+var subjects = ['english', 'math', 'science', 'sst'];
+var maxTotal = 400;
+{% endif %}
 
   const preview = document.getElementById('total-preview');
 

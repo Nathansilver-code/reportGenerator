@@ -8,7 +8,7 @@
     --rc-mid:    #1a56b0;
     --rc-light:  #3b82f6;
     --rc-pale:   #eff6ff;
-    --rc-accent: #93c5fd;
+    --rc-accent: #c9a227;
   }
 
   .report-card {
@@ -18,7 +18,7 @@
     border: 2px solid var(--rc-mid);
     border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(26,86,176,0.15);
+    box-shadow: 0 4px 20px rgba(13,43,110,0.15);
   }
 
   .rc-banner {
@@ -95,7 +95,7 @@
   }
   .rc-summary-half {
     text-align: center;
-    border: 1px solid rgba(147,197,253,0.3);
+    border: 1px solid rgba(201,162,39,0.3);
     border-radius: 6px;
     padding: 0.5rem;
   }
@@ -140,18 +140,18 @@
   }
 
   @media print {
-    .no-print     { display: none !important; }
-    .report-card  { border-color: #000; box-shadow: none; max-width: 100%; }
-    .rc-banner    { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-stripe    { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print            { display: none !important; }
+    .report-card         { border-color: #000; box-shadow: none; max-width: 100%; }
+    .rc-banner           { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-stripe           { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rc-summary-combined { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-table th  { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-table th         { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rc-table tr:nth-child(even) { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .info-cell    { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-comment   { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    html, body    { height: 100%; }
-    .main-content { padding: 0 !important; margin: 0 !important; }
-    @page         { size: A4 portrait; margin: 1cm; }
+    .info-cell           { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rc-comment          { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body           { height: 100%; }
+    .main-content        { padding: 0 !important; margin: 0 !important; }
+    @page                { size: A4 portrait; margin: 1cm; }
   }
 </style>
 {% endblock %}
@@ -242,18 +242,18 @@
       <div class="rc-section">
         <div class="rc-summary-combined">
           <div class="rc-summary-half">
-            <div class="set-label">Mid Term</div>
+            <div class="set-label">Pre-End</div>
             <div class="metrics">
               <div>
-                <div class="val">{{ mid_computed.total if mid_computed else '—' }}</div>
+                <div class="val">{{ preend_computed.total if preend_computed else '—' }}</div>
                 <div class="lbl">Total</div>
               </div>
               <div>
-                <div class="val">{{ preend_computed.aggregate_sum if mid_computed else '—' }}</div>
+                <div class="val">{{ preend_computed.aggregate_sum if preend_computed else '—' }}</div>
                 <div class="lbl">Aggregate</div>
               </div>
               <div>
-                <div class="val">{{ preend_computed.division if mid_computed else '—' }}</div>
+                <div class="val">{{ preend_computed.division if preend_computed else '—' }}</div>
                 <div class="lbl">Division</div>
               </div>
             </div>

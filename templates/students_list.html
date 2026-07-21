@@ -75,14 +75,14 @@
           {% for student in students %}
           {% set s_lower = student.class_name in lower_classes %}
 
-          {# Get mid term and end of term marks #}
+          {# Get marks for each exam type #}
           {% set mid_mark    = namespace(found=none) %}
           {% set preend_mark = namespace(found=none) %}
           {% set end_mark    = namespace(found=none) %}
           {% for m in student.marks %}
-             {% if m.exam_type == 'Mid Term'    %}{% set mid_mark.found    = m %}{% endif %}
-             {% if m.exam_type == 'Pre-End'     %}{% set preend_mark.found = m %}{% endif %}
-             {% if m.exam_type == 'End of Term' %}{% set end_mark.found    = m %}{% endif %}
+            {% if m.exam_type == 'Mid Term'    %}{% set mid_mark.found    = m %}{% endif %}
+            {% if m.exam_type == 'Pre-End'     %}{% set preend_mark.found = m %}{% endif %}
+            {% if m.exam_type == 'End of Term' %}{% set end_mark.found    = m %}{% endif %}
           {% endfor %}
 
           <tr>
@@ -93,20 +93,27 @@
 
             {# Mid Term status #}
             <td>
+              {% if mid_mark.found %}
+                <span style="color:var(--success); font-weight:600;">✔ Entered</span>
+                <span class="text-muted" style="font-size:0.8rem; display:block;">
+                  Total: {{ mid_mark.found.total }}
+                </span>
+              {% else %}
+                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type='Mid Term') }}"
+                   class="btn btn-outline btn-sm">➕ Add Mid Term</a>
+              {% endif %}
+            </td>
+
+            {# Pre-End status #}
+            <td>
               {% if preend_mark.found %}
                 <span style="color:var(--success); font-weight:600;">✔ Entered</span>
-                {% if s_lower %}
-                  <span class="text-muted" style="font-size:0.8rem; display:block;">
-                    Total: {{ preend_mark.found.total }}
-                  </span>
-                {% else %}
-                  <span class="text-muted" style="font-size:0.8rem; display:block;">
-                    Total: {{ preend_mark.found.total }}
-                  </span>
-                {% endif %}
+                <span class="text-muted" style="font-size:0.8rem; display:block;">
+                  Total: {{ preend_mark.found.total }}
+                </span>
               {% else %}
-                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type=' Term') }}"
-                   class="btn btn-outline btn-sm">➕ Add Mid Term</a>
+                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type='Pre-End') }}"
+                   class="btn btn-outline btn-sm">➕ Add Pre-End</a>
               {% endif %}
             </td>
 
@@ -123,37 +130,57 @@
               {% endif %}
             </td>
 
-{# Actions #}
-<td>
-  <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-    {% if mid_mark.found %}
-    <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Mid Term') }}"
-       class="btn btn-outline btn-sm">📄 Mid</a>
-    {% endif %}
-    {% if end_mark.found %}
-    <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='End of Term') }}"
-       class="btn btn-outline btn-sm">📄 End</a>
-    {% endif %}
-    {% if preend_mark.found or end_mark.found %}
-    <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Combined') }}"
-       class="btn btn-outline btn-sm">📄 Combined</a>
-    {% endif %}
-    {% if end_mark.found %}
-    <form method="POST"
-          action="{{ url_for('reports.delete_marks', mark_id=end_mark.found.id) }}"
-          onsubmit="return confirm('Delete End of Term marks for {{ student.full_name }}?');"
-          style="margin:0;">
-      <button type="submit" class="btn btn-danger btn-sm">🗑 End</button>
-    </form>
-    {% endif %}
-    <form method="POST"
-          action="{{ url_for('marks.delete_student', student_id=student.id) }}"
-          onsubmit="return confirm('Delete {{ student.full_name }} completely? This cannot be undone.');"
-          style="margin:0;">
-      <button type="submit" class="btn btn-danger btn-sm">🗑 All</button>
-    </form>
-  </div>
-</td>
+            {# Actions #}
+            <td>
+              <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                {% if mid_mark.found %}
+                <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Mid Term') }}"
+                   class="btn btn-outline btn-sm">📄 Mid</a>
+                {% endif %}
+                {% if preend_mark.found %}
+                <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Pre-End') }}"
+                   class="btn btn-outline btn-sm">📄 Pre-End</a>
+                {% endif %}
+                {% if end_mark.found %}
+                <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='End of Term') }}"
+                   class="btn btn-outline btn-sm">📄 End</a>
+                {% endif %}
+                {% if preend_mark.found or end_mark.found %}
+                <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Combined') }}"
+                   class="btn btn-outline btn-sm">📄 Combined</a>
+                {% endif %}
+                {% if mid_mark.found %}
+                <form method="POST"
+                      action="{{ url_for('reports.delete_marks', mark_id=mid_mark.found.id) }}"
+                      onsubmit="return confirm('Delete Mid Term marks for {{ student.full_name }}?');"
+                      style="margin:0;">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑 Mid</button>
+                </form>
+                {% endif %}
+                {% if preend_mark.found %}
+                <form method="POST"
+                      action="{{ url_for('reports.delete_marks', mark_id=preend_mark.found.id) }}"
+                      onsubmit="return confirm('Delete Pre-End marks for {{ student.full_name }}?');"
+                      style="margin:0;">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑 Pre</button>
+                </form>
+                {% endif %}
+                {% if end_mark.found %}
+                <form method="POST"
+                      action="{{ url_for('reports.delete_marks', mark_id=end_mark.found.id) }}"
+                      onsubmit="return confirm('Delete End of Term marks for {{ student.full_name }}?');"
+                      style="margin:0;">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑 End</button>
+                </form>
+                {% endif %}
+                <form method="POST"
+                      action="{{ url_for('marks.delete_student', student_id=student.id) }}"
+                      onsubmit="return confirm('Delete {{ student.full_name }} completely? This cannot be undone.');"
+                      style="margin:0;">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑 All</button>
+                </form>
+              </div>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

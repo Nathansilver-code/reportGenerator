@@ -19,10 +19,8 @@ reports_bp = Blueprint("reports", __name__)
 
 PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
-EXAM_TYPES      = ["Mid Term", "Pre-End", "End of Term", "Combined"]
-
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
+EXAM_TYPES         = ["Mid Term", "Pre-End", "End of Term", "Combined"]
+MARKSHEET_EXAM_TYPES = ["Mid Term", "Pre-End", "End of Term"]
 
 def _get_student_mark(student, exam_type):
     for mark in student.marks:
@@ -398,7 +396,7 @@ def reports_home():
     return render_template("reports_home.html",
                            classes=PRIMARY_CLASSES,
                            terms=TERMS,
-                           exam_types=EXAM_TYPES)
+                           exam_types=MARKSHEET_EXAM_TYPES)
 
 
 @reports_bp.route("/marksheet")

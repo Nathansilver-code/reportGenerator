@@ -212,12 +212,8 @@ var maxTotal = 400;
   {% if use_dropdown %}
   // ── Searchable dropdown logic ──
   let allStudents = [];
+  let studentsLoaded = false;
   let selectedStudentId = null;
-
-  // Load students from API
-  fetch("{{ url_for('marks.api_students') }}?class_name={{ class_name }}&term={{ term }}")
-    .then(r => r.json())
-    .then(data => { allStudents = data; });
 
   const searchInput    = document.getElementById('student-search');
   const dropdown       = document.getElementById('search-dropdown');
@@ -226,9 +222,31 @@ var maxTotal = 400;
   const fullNameHidden = document.getElementById('full_name_hidden');
   const studentIdInput = document.getElementById('existing_student_id');
 
+  // Load students from API
+  fetch("{{ url_for('marks.api_students') }}?class_name={{ class_name }}&term={{ term }}")
+    .then(r => r.json())
+    .then(data => {
+      allStudents = data;
+      studentsLoaded = true;
+      // Re-run whatever search the user already typed, now that data has arrived
+      if (searchInput.value.trim()) {
+        searchInput.dispatchEvent(new Event('input'));
+      }
+    })
+    .catch(err => {
+      console.error('Failed to load students:', err);
+      studentsLoaded = true; // stop showing "Loading…" forever even on failure
+    });
+
   searchInput.addEventListener('input', function() {
     const query = this.value.toLowerCase().trim();
     if (!query) { dropdown.style.display = 'none'; return; }
+
+    if (!studentsLoaded) {
+      dropdown.innerHTML = '<div style="padding:0.5rem 0.75rem; color:var(--muted);">Loading students…</div>';
+      dropdown.style.display = 'block';
+      return;
+    }
 
     const filtered = allStudents.filter(s =>
       s.full_name.toLowerCase().includes(query)

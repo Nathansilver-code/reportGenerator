@@ -6,6 +6,7 @@ from utils.grading import compute_student_results
 
 import io
 import zipfile
+from pypdf import PdfWriter, PdfReader
 from datetime import datetime
 import openpyxl
 from reportlab.lib.pagesizes import A4, landscape
@@ -587,6 +588,51 @@ def bulk_download():
         download_name=f"ReportCards_{exam_type}.zip"
     )
 
+@reports_bp.route("/bulk-download-merged", methods=["POST"])
+@login_required
+def bulk_download_merged():
+    """Merge all selected students' report cards into a single PDF file."""
+    student_ids = request.form.getlist("student_ids")
+    exam_type   = request.form.get("exam_type", "Mid Term")
+
+    if not student_ids:
+        flash("Please select at least one student.", "warning")
+        return redirect(url_for("reports.reports_home"))
+
+    merger = PdfWriter()
+    included = 0
+
+    for sid in student_ids:
+        student = Student.query.get(int(sid))
+        if not student:
+            continue
+
+        if exam_type == "Combined":
+            pdf_bytes = _build_combined_report_pdf(student)
+        else:
+            pdf_bytes = _build_report_pdf(student, exam_type)
+
+        if pdf_bytes:
+            reader = PdfReader(io.BytesIO(pdf_bytes))
+            for page in reader.pages:
+                merger.add_page(page)
+            included += 1
+
+    if included == 0:
+        flash("No marks found for the selected students.", "warning")
+        return redirect(url_for("reports.reports_home"))
+
+    out_buf = io.BytesIO()
+    merger.write(out_buf)
+    merger.close()
+    out_buf.seek(0)
+
+    return send_file(
+        out_buf,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"ReportCards_{exam_type}_Combined.pdf"
+    )
 
 @reports_bp.route("/marksheet/download/excel")
 @login_required

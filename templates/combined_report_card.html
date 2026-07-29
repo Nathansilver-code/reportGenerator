@@ -27,14 +27,7 @@
     padding: 1rem 2rem;
     text-align: center;
   }
-  .rc-banner h1 {
-    font-family: 'Merriweather', serif;
-    font-size: 1.2rem;
-    margin: 0 0 0.2rem;
-    color: var(--rc-accent);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+  
   .rc-banner p { opacity: 0.9; font-size: 0.85rem; margin: 0; }
 
   .rc-stripe {
@@ -56,7 +49,7 @@
     letter-spacing: 1px;
     color: var(--rc-mid);
     border-bottom: 2px solid var(--rc-light);
-    padding-bottom: 0.25rem;
+    padding-bottnom: 0.25rem;
     margin-bottom: 0.5rem;
   }
 
@@ -139,6 +132,57 @@
     text-align: center;
   }
 
+  .rc-banner .school-name {
+  font-family: 'Merriweather', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--rc-accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+.rc-banner .school-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin: 0 auto 0.5rem;
+  display: block;
+  border-radius: 50%;
+  background: #fff;
+  padding: 4px;
+}
+.rc-banner .school-location  { font-size: 0.8rem; margin: 0.1rem 0; }
+.rc-banner .school-contact   { font-size: 0.8rem; margin: 0.1rem 0; }
+.rc-banner .school-motto     { font-size: 0.78rem; font-style: italic; margin: 0.3rem 0 0.5rem; }
+.rc-banner .report-heading   {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-transform: uppercase;
+  margin-top: 0.3rem;
+}
+
+.rc-footer-note {
+  text-align: center;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--muted);
+  margin-top: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border);
+}
+
+.term-fees-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  font-size: 0.78rem;
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+.term-fees-row .label { font-weight: 700; color: var(--rc-mid); }
+
   @media print {
     .no-print            { display: none !important; }
     .report-card         { border-color: #000; box-shadow: none; max-width: 100%; }
@@ -171,12 +215,12 @@
 
     {# Banner #}
     <div class="rc-banner">
-      <h1>Maranatha Schools</h1>
-      <img src="static/css/logo.jpg" alt="school logo" width="150" height="150">
-      <p>LOCATED AT 8 MILES OFF KAMPALA-GAYAZA ROAD MAGERE-KITO VILLAGE</p>
-      <P>P.O Box 153490, KAMPALA, Tel: 0702-619008/ 0787-908562</P>
-      <p>LEARNER'S ASSESSMENT REPORT CARD &nbsp;|&nbsp; {{ student.term }} &nbsp;|&nbsp; Academic Year {{ student.year }}</p>
-      <p>FEAR OF GOD IS WISDOM</p>
+      <div class="school-name">Maranatha Mixed Primary School — Wampeewo</div>
+      <img class="school-logo" src="{{ url_for('static', filename='css/logo.jpg') }}" alt="School Badge">
+      <p class="school-location">Located at 8 miles off Kampala–Gayaza Road, Magere-Kito Village</p>
+      <p class="school-contact">P.O. Box 153490, Kampala &nbsp;|&nbsp; Tel: 0702-619008 / 0787-908562</p>
+      <p class="school-motto">"Fear of God is Wisdom"</p>
+      <p class="report-heading">Learner's Assessment Report</p>
     </div>
     <div class="rc-stripe"></div>
 
@@ -296,7 +340,6 @@
         <div class="rc-section-title">Head Teacher's Comment</div>
         <div class="rc-comment">
           <br>
-          <br>
         </div>
       </div>
 
@@ -306,7 +349,26 @@
         <div class="sig-line">Head Teacher's Signature &amp; Date</div>
       </div>
 
+      {# Next Term & Fees #}
+      <div class="term-fees-row">
+        <div>
+          <span class="label">Next Term Begins On:</span>
+          <span>_____________________</span>
+        </div>
+        <div>
+          <span class="label">School Fees:</span>
+          <span>Refer to requirement sheet</span>
+        </div>
+      </div>
+
+      {# Stamp validity note #}
+      <div class="rc-footer-note">
+        Not valid without the school stamp
+      </div>
+
     </div>
   </div>
 </div>
 {% endblock %}
+      
+    

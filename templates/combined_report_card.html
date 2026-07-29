@@ -172,7 +172,11 @@
     {# Banner #}
     <div class="rc-banner">
       <h1>Maranatha Schools</h1>
-      <p>Combined Report Card &nbsp;|&nbsp; {{ student.term }} &nbsp;|&nbsp; Academic Year {{ student.year }}</p>
+      <img src="static/css/logo.jpg" alt="school logo" width="150" height="150">
+      <p>LOCATED AT 8 MILES OFF KAMPALA-GAYAZA ROAD MAGERE-KITO VILLAGE</p>
+      <P>P.O Box 153490, KAMPALA, Tel: 0702-619008/ 0787-908562</P>
+      <p>LEARNER'S ASSESSMENT REPORT CARD &nbsp;|&nbsp; {{ student.term }} &nbsp;|&nbsp; Academic Year {{ student.year }}</p>
+      <p>FEAR OF GOD IS WISDOM</p>
     </div>
     <div class="rc-stripe"></div>
 
@@ -200,7 +204,7 @@
           </div>
           <div class="info-cell">
             <label>Report Type</label>
-            <span>Combined</span>
+            <span>Term Assessment</span>
           </div>
           <div class="info-cell">
             <label>Academic Year</label>
@@ -287,6 +291,12 @@
           {% elif preend_computed %}
             {{ preend_computed.comment }}
           {% endif %}
+        </div>
+
+        <div class="rc-section-title">Head Teacher's Comment</div>
+        <div class="rc-comment">
+          <br>
+          <br>
         </div>
       </div>
 

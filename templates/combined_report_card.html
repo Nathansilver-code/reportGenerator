@@ -89,7 +89,7 @@
     letter-spacing: 1px;
     color: var(--rc-mid);
     border-bottom: 2px solid var(--rc-light);
-    padding-bottnom: 0.25rem;
+    padding-bottom: 0.25rem;
     margin-bottom: 0.5rem;
   }
 
@@ -106,6 +106,12 @@
   .info-cell label { font-size: 0.68rem; color: var(--rc-mid); display: block; margin-bottom: 0.05rem; }
   .info-cell span  { font-weight: 700; font-size: 0.85rem; color: var(--rc-dark); }
 
+  .info-cell--name {
+  grid-column: span 2;
+}
+.info-cell--name span {
+  font-size: 1.15rem;
+}
   .rc-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
   .rc-table th {
     background: var(--rc-mid);
@@ -287,34 +293,28 @@
       {# Student Info #}
       <div class="rc-section">
         <div class="rc-section-title">Pupil's Information</div>
-        <div class="info-grid">
-          <div class="info-cell">
-            <label>Full Name</label>
-            <span>{{ student.full_name }}</span>
+          <div class="info-grid">
+            <div class="info-cell info-cell--name">
+               <label>Full Name</label>
+               <span>{{ student.full_name }}</span>
+            </div>
+            <div class="info-cell">
+               <label>Term</label>
+               <span>{{ student.term }}</span>
+            </div>
+            <div class="info-cell">
+              <label>Class Teacher</label>
+              <span>{{ teacher.full_name }}</span>
+            </div>
+            <div class="info-cell">
+               <label>Class</label>
+               <span>{{ student.class_name }}</span>
+            </div>
+            <div class="info-cell">
+               <label>Academic Year</label>
+               <span>{{ student.year }}</span>
+            </div>
           </div>
-          <div class="info-cell">
-            <label>Class</label>
-            <span>{{ student.class_name }}</span>
-          </div>
-          <div class="info-cell">
-            <label>Term</label>
-            <span>{{ student.term }}</span>
-          </div>
-          <div class="info-cell">
-            <label>Class Teacher</label>
-            <span>{{ teacher.full_name }}</span>
-          </div>
-          <div class="info-cell">
-            <label>Report Type</label>
-            <span>Term Assessment</span>
-          </div>
-          <div class="info-cell">
-            <label>Academic Year</label>
-            <span>{{ student.year }}</span>
-          </div>
-        </div>
-      </div>
-
       {# Academic Performance #}
       <div class="rc-section">
         <div class="rc-section-title">Academic Performance</div>

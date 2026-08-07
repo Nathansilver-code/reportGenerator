@@ -21,6 +21,46 @@
     box-shadow: 0 4px 20px rgba(13,43,110,0.15);
   }
 
+  .report-card {
+  position: relative;
+  border: 10px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    repeating-linear-gradient(
+      45deg,
+      var(--rc-accent) 0 12px,
+      var(--rc-mid)    12px 24px,
+      var(--rc-dark)   24px 36px,
+      var(--rc-light)  36px 48px
+    ) border-box;
+  box-shadow:
+    0 4px 20px rgba(13,43,110,0.15),
+    inset 0 0 0 3px #fff,
+    inset 0 0 0 6px var(--rc-accent);
+}
+
+.rc-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+}
+.rc-watermark img {
+  width: 60%;
+  max-width: 420px;
+  opacity: 0.07;
+  filter: grayscale(1);
+}
+
+.rc-banner, .rc-stripe, .rc-body {
+  position: relative;
+  z-index: 1;
+}
+
   .rc-banner {
     background: var(--rc-dark);
     color: #fff;
@@ -184,19 +224,32 @@
 .term-fees-row .label { font-weight: 700; color: var(--rc-mid); }
 
   @media print {
-    .no-print            { display: none !important; }
-    .report-card         { border-color: #000; box-shadow: none; max-width: 100%; }
-    .rc-banner           { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-stripe           { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-summary-combined { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-table th         { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-table tr:nth-child(even) { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .info-cell           { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .rc-comment          { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    html, body           { height: 100%; }
-    .main-content        { padding: 0 !important; margin: 0 !important; }
-    @page                { size: A4 portrait; margin: 1cm; }
+  .no-print            { display: none !important; }
+  .report-card         {
+    box-shadow: none;
+    max-width: 100%;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
+  .rc-watermark img     { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rc-banner            { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.7rem 1.5rem; }
+  .rc-stripe            { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rc-summary-combined  { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rc-table th          { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rc-table tr:nth-child(even) { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .info-cell            { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rc-comment           { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .rc-body              { padding: 0.7rem 1.2rem; }
+  .rc-section           { margin-bottom: 0.6rem; }
+  .rc-table th, .rc-table td { padding: 0.3rem 0.6rem; }
+  .signature-row        { margin-top: 0.6rem; }
+  .rc-footer-note       { margin-top: 0.6rem; padding-top: 0.4rem; }
+
+  html, body            { height: 100%; }
+  .main-content         { padding: 0 !important; margin: 0 !important; }
+  @page                 { size: A4 portrait; margin: 1cm; }
+}
 </style>
 {% endblock %}
 
@@ -212,6 +265,11 @@
   </div>
 
   <div class="report-card">
+
+    {# Watermark #}
+    <div class="rc-watermark">
+      <img src="{{ url_for('static', filename='css/logo.jpg') }}" alt="">
+    </div>
 
     {# Banner #}
     <div class="rc-banner">

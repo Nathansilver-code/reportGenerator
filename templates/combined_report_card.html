@@ -168,7 +168,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
-    margin-top: 0.85rem;
+    margin-top: 1rem;
   }
   .sig-line {
     border-top: 1px solid var(--rc-mid);
@@ -238,19 +238,30 @@
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
   .rc-watermark img     { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .rc-banner            { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.7rem 1.5rem; }
+  .rc-banner            {
+    background: var(--rc-dark) !important;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    padding: 0.5rem 1.5rem;
+  }
+  .rc-banner .school-logo { width: 70px; height: 70px; margin-bottom: 0.3rem; }
+  .rc-banner .school-name { font-size: 1.25rem; margin-bottom: 0.3rem; }
+  .rc-banner .school-motto { margin: 0.15rem 0 0.3rem; }
+  .rc-banner .report-heading { margin-top: 0.15rem; }
+
   .rc-stripe            { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .rc-summary-combined  { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rc-summary-combined  { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.5rem 1rem; }
   .rc-table th          { background: var(--rc-mid) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .rc-table tr:nth-child(even) { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .info-cell            { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .rc-comment           { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .info-cell            { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.2rem 0.5rem; }
+  .rc-comment           { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0.4rem 0.8rem; }
 
-  .rc-body              { padding: 0.7rem 1.2rem; }
-  .rc-section           { margin-bottom: 0.5rem; }
-  .rc-table th, .rc-table td { padding: 0.3rem 0.6rem; }
-  .signature-row        { margin-top: 0.6rem; }
-  .rc-footer-note       { margin-top: 0.6rem; padding-top: 0.4rem; }
+  .rc-body              { padding: 0.5rem 1.2rem; }
+  .rc-section           { margin-bottom: 0.45rem; }
+  .rc-section-title      { margin-bottom: 0.3rem; padding-bottom: 0.15rem; }
+  .rc-table th, .rc-table td { padding: 0.25rem 0.6rem; }
+  .signature-row        { margin-top: 0.45rem; }
+  .term-fees-row         { margin-top: 0.45rem; padding-top: 0.4rem; }
+  .rc-footer-note        { margin-top: 0.4rem; padding-top: 0.3rem; }
 
   html, body            { height: 100%; }
   .main-content         { padding: 0 !important; margin: 0 !important; }

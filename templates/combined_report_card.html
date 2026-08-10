@@ -247,14 +247,14 @@
   .rc-comment           { background: var(--rc-pale) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
   .rc-body              { padding: 0.7rem 1.2rem; }
-  .rc-section           { margin-bottom: 0.6rem; }
+  .rc-section           { margin-bottom: 0.5rem; }
   .rc-table th, .rc-table td { padding: 0.3rem 0.6rem; }
   .signature-row        { margin-top: 0.6rem; }
   .rc-footer-note       { margin-top: 0.6rem; padding-top: 0.4rem; }
 
   html, body            { height: 100%; }
   .main-content         { padding: 0 !important; margin: 0 !important; }
-  @page                 { size: A4 portrait; margin: 1cm; }
+  @page                 { size: A4 portrait; margin: 0.7cm; }
 }
 </style>
 {% endblock %}
@@ -403,7 +403,7 @@
 
       {# Signatures #}
       <div class="signature-row">
-        <div class="sig-line">Class Teacher's Signature </div>
+        <div class="sig-line">Class Teacher's Signature &amp; </div>
         <div class="sig-line">Head Teacher's Signature &amp; Date</div>
       </div>
 
@@ -411,7 +411,7 @@
       <div class="term-fees-row">
         <div>
           <span class="label">Next Term Begins On: 14th SEPTEMBER 2026</span>
-          <span></span>
+          
         </div>
         <div>
           <span class="label">School Fees:</span>

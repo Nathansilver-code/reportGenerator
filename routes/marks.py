@@ -8,7 +8,7 @@ marks_bp = Blueprint("marks", __name__)
 
 PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
-EXAM_TYPES      = ["Mid Term", "Pre-End", "End of Term"]
+EXAM_TYPES      = ["Mid Term", "Pre-End", "End of Term", "Mock"]
 
 
 @marks_bp.route("/select-class", methods=["GET", "POST"])
@@ -26,6 +26,13 @@ def select_class():
                                    terms=TERMS,
                                    exam_types=EXAM_TYPES)
 
+        if selected_exam == "Mock" and selected_class != "P7":
+            flash("Mock exams are only for P7.", "danger")
+            return render_template("select_class.html",
+                                   classes=PRIMARY_CLASSES,
+                                   terms=TERMS,
+                                   exam_types=EXAM_TYPES)
+        
         return redirect(url_for("marks.register_student",
                                 class_name=selected_class,
                                 term=selected_term,
@@ -82,9 +89,12 @@ def register_student():
         flash("No class selected. Please start again.", "warning")
         return redirect(url_for("marks.select_class"))
 
-    is_lower    = class_name in LOWER_PRIMARY_CLASSES
-    use_dropdown = exam_type in ["Pre-End", "End of Term"]
+    if exam_type == "Mock" and class_name != "P7":
+        flash("Mock exams are only for P7.", "danger")
+        return redirect(url_for("marks.select_class"))
 
+    is_lower     = class_name in LOWER_PRIMARY_CLASSES
+    use_dropdown = exam_type in ["Pre-End", "End of Term", "Mock"]
     if request.method == "POST":
         action    = request.form.get("action", "new")
         full_name = request.form.get("full_name", "").strip()
@@ -242,6 +252,10 @@ def add_marks(student_id):
     is_lower  = student.class_name in LOWER_PRIMARY_CLASSES
     exam_type = request.args.get("exam_type") or request.form.get("exam_type", "End of Term")
     term      = request.args.get("term") or request.form.get("term", student.term)
+
+    if exam_type == "Mock" and student.class_name != "P7":
+        flash("Mock exams are only for P7.", "danger")
+        return redirect(url_for("marks.list_students"))
 
     existing = Mark.query.filter_by(
         student_id=student_id,

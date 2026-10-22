@@ -21,8 +21,7 @@ reports_bp = Blueprint("reports", __name__)
 PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
 EXAM_TYPES         = ["Mid Term", "Pre-End", "End of Term", "Combined"]
-MARKSHEET_EXAM_TYPES = ["Mid Term", "Pre-End", "End of Term"]
-
+MARKSHEET_EXAM_TYPES = ["Mid Term", "Pre-End", "End of Term", "Mock"]
 def _get_student_mark(student, exam_type):
     for mark in student.marks:
         if mark.exam_type == exam_type:
@@ -409,6 +408,10 @@ def marksheet():
 
     if not class_name:
         flash("Please select a class to view the marksheet.", "warning")
+        return redirect(url_for("reports.reports_home"))
+
+    if exam_type == "Mock" and class_name != "P7":
+        flash("Mock exams are only for P7.", "warning")
         return redirect(url_for("reports.reports_home"))
 
     if current_user.is_admin:

@@ -2,7 +2,7 @@ LOWER_PRIMARY_CLASSES = ["P1", "P2", "P3"]
 P3_CLASSES = ["P3"]
 LOWER_PRIMARY_ONLY = ["P1", "P2"]
 MIDDLE_PRIMARY_CLASSES = ["P4", "P5", "P6"]
-
+P7_CLASSES = ["P7"]
 
 def get_grade(mark, max_mark=100, class_name=None):
 
@@ -75,7 +75,7 @@ def get_grade(mark, max_mark=100, class_name=None):
             return {"grade": "F9", "aggregate": 9, "remark": "Fail"}
 
     else:
-        # P7 grading (P8 starts at 40%, F9 below 40%)
+        # P7 grading (C6 starts at 45%, P7 at 40%, P8 at 30%, F9 below 30%)
         if percentage >= 90:
             return {"grade": "D1", "aggregate": 1, "remark": "Excellent"}
         elif percentage >= 80:
@@ -86,15 +86,14 @@ def get_grade(mark, max_mark=100, class_name=None):
             return {"grade": "C4", "aggregate": 4, "remark": "Fair"}
         elif percentage >= 55:
             return {"grade": "C5", "aggregate": 5, "remark": "Pass"}
-        elif percentage >= 50:
-            return {"grade": "C6", "aggregate": 6, "remark": "Pass"}
         elif percentage >= 45:
-            return {"grade": "P7", "aggregate": 7, "remark": "Weak Pass"}
+            return {"grade": "C6", "aggregate": 6, "remark": "Pass"}
         elif percentage >= 40:
+            return {"grade": "P7", "aggregate": 7, "remark": "Weak Pass"}
+        elif percentage >= 30:
             return {"grade": "P8", "aggregate": 8, "remark": "Weak Pass"}
         else:
             return {"grade": "F9", "aggregate": 9, "remark": "Fail"}
-
 
 def get_division(total_marks, class_name=None):
     """

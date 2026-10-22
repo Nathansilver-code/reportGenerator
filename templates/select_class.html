@@ -50,7 +50,7 @@
           <label class="form-label">Exam Type</label>
           <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:0.6rem; margin-top:0.4rem;">
             {% for exam in exam_types %}
-            <label style="cursor:pointer;">
+                        <label style="cursor:pointer;" class="exam-option" data-exam="{{ exam }}">
               <input type="radio" name="exam_type" value="{{ exam }}"
                      style="display:none;" class="exam-radio"
                      {% if loop.first %}checked{% endif %}/>
@@ -118,5 +118,26 @@
       tile.style.color       = 'var(--white)';
     });
   });
+
+  // Mock is only available for P7
+  function updateMockVisibility() {
+    var selected = document.querySelector('.class-radio:checked');
+    var isP7 = selected && selected.value === 'P7';
+    var mockOption = document.querySelector('.exam-option[data-exam="Mock"]');
+    if (!mockOption) return;
+    mockOption.style.display = isP7 ? '' : 'none';
+    if (!isP7) {
+      var mockRadio = mockOption.querySelector('input');
+      if (mockRadio.checked) {
+        var first = document.querySelector('.exam-radio');
+        first.checked = true;
+        first.dispatchEvent(new Event('change'));
+      }
+    }
+  }
+  document.querySelectorAll('.class-radio').forEach(function(r) {
+    r.addEventListener('change', updateMockVisibility);
+  });
+  updateMockVisibility(); 
 </script>
 {% endblock %}

@@ -68,6 +68,7 @@
             <th>Mid Term</th>
             <th>Pre-End</th>
             <th>End of Term</th>
+            <th>Mock</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -79,12 +80,13 @@
           {% set mid_mark    = namespace(found=none) %}
           {% set preend_mark = namespace(found=none) %}
           {% set end_mark    = namespace(found=none) %}
+          {% set mock_mark   = namespace(found=none) %}
           {% for m in student.marks %}
             {% if m.exam_type == 'Mid Term'    %}{% set mid_mark.found    = m %}{% endif %}
             {% if m.exam_type == 'Pre-End'     %}{% set preend_mark.found = m %}{% endif %}
             {% if m.exam_type == 'End of Term' %}{% set end_mark.found    = m %}{% endif %}
+            {% if m.exam_type == 'Mock'        %}{% set mock_mark.found   = m %}{% endif %}
           {% endfor %}
-
           <tr>
             <td>{{ loop.index }}</td>
             <td style="font-weight:600;">{{ student.full_name }}</td>
@@ -130,6 +132,21 @@
               {% endif %}
             </td>
 
+                        {# Mock status (P7 only) #}
+            <td>
+              {% if student.class_name != 'P7' %}
+                <span class="text-muted">—</span>
+              {% elif mock_mark.found %}
+                <span style="color:var(--success); font-weight:600;">✔ Entered</span>
+                <span class="text-muted" style="font-size:0.8rem; display:block;">
+                  Total: {{ mock_mark.found.total }}
+                </span>
+              {% else %}
+                <a href="{{ url_for('marks.add_marks', student_id=student.id, exam_type='Mock') }}"
+                   class="btn btn-outline btn-sm">➕ Add Mock</a>
+              {% endif %}
+            </td>
+
             {# Actions #}
             <td>
               <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
@@ -144,6 +161,10 @@
                 {% if end_mark.found %}
                 <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='End of Term') }}"
                    class="btn btn-outline btn-sm">📄 End</a>
+                {% endif %}
+                {% if mock_mark.found %}
+                <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Mock') }}"
+                   class="btn btn-outline btn-sm">📄 Mock</a>
                 {% endif %}
                 {% if preend_mark.found or end_mark.found %}
                 <a href="{{ url_for('reports.report_card', student_id=student.id, exam_type='Combined') }}"
@@ -171,6 +192,14 @@
                       onsubmit="return confirm('Delete End of Term marks for {{ student.full_name }}?');"
                       style="margin:0;">
                   <button type="submit" class="btn btn-danger btn-sm">🗑 End</button>
+                </form>
+                {% endif %}
+                {% if mock_mark.found %}
+                <form method="POST"
+                      action="{{ url_for('reports.delete_marks', mark_id=mock_mark.found.id) }}"
+                      onsubmit="return confirm('Delete Mock marks for {{ student.full_name }}?');"
+                      style="margin:0;">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑 Mock</button>
                 </form>
                 {% endif %}
                 <form method="POST"

@@ -10,6 +10,7 @@ def create_app():
     """Application factory: creates and configures the Flask app."""
     app = Flask(__name__)
     app.config.from_object(Config)
+    print("DB driver:", app.config["SQLALCHEMY_DATABASE_URI"].split("://")[0], flush=True)
 
     @app.context_processor
     def inject_now():

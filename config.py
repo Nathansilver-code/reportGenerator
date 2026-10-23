@@ -4,9 +4,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def _normalize_db_url(url: str) -> str:
-    """SQLAlchemy 1.4+ requires 'postgresql://', but some providers still hand out 'postgres://'."""
+    """Normalise provider URLs so SQLAlchemy uses psycopg2 (the installed driver)."""
     if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql://", 1)
+        url = url.replace("postgres://", "postgresql://", 1)
+    if url.startswith("postgresql+psycopg://"):
+        url = url.replace("postgresql+psycopg://", "postgresql://", 1)
     return url
 
 class Config:

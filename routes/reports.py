@@ -12,9 +12,13 @@ import openpyxl
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import (
+    SimpleDocTemplate, BaseDocTemplate, PageTemplate, Frame, KeepInFrame, FrameBreak,
+    Table, TableStyle, Paragraph, Spacer,
+)
 
+from reportlab.lib.styles import ParagraphStyle
+from xml.sax.saxutils import escape
 
 reports_bp = Blueprint("reports", __name__)
 
@@ -387,6 +391,210 @@ def _build_combined_report_pdf(student):
     buf.seek(0)
     return buf.read()
 
+def _content_height(flowables, width):
+    """Total height the flowables need at this width."""
+    return sum(fl.wrap(width, 10000)[1] for fl in flowables)
+
+
+def _a5_report_flowables(student, computed, exam_type, width, p, f=0.95):
+    """
+    One report card laid out for an A5 half-sheet.
+    f = font scale (fixed), p = vertical spacing scale (bigger = more breathing room).
+    """
+    NAVY  = colors.HexColor("#0d2b6e")
+    BLUE  = colors.HexColor("#1a56b0")
+    PALE  = colors.HexColor("#eff6ff")
+    LINE  = colors.HexColor("#dbeafe")
+    WHITE = colors.white
+
+    year    = getattr(student, "year", None) or datetime.utcnow().year
+    teacher = student.teacher
+    rp      = 3.5 * p   # table row padding (top and bottom)
+
+    def st(name, **kw):
+        return ParagraphStyle(name, spaceBefore=0, spaceAfter=0, **kw)
+
+    title_style   = st("a5t",   fontName="Helvetica-Bold", fontSize=16*f, leading=19*f,
+                       textColor=WHITE, alignment=1)
+    sub_style     = st("a5s",   fontName="Helvetica", fontSize=10*f, leading=12*f,
+                       textColor=WHITE, alignment=1)
+    section_style = st("a5sec", fontName="Helvetica-Bold", fontSize=9*f, leading=11*f,
+                       textColor=BLUE)
+    label_style   = st("a5lb",  fontName="Helvetica-Bold", fontSize=9*f, leading=11*f)
+    value_style   = st("a5vl",  fontName="Helvetica", fontSize=9*f, leading=11*f)
+    comment_style = st("a5cm",  fontName="Helvetica", fontSize=9*f, leading=13*f,
+                       textColor=NAVY)
+    sum_style     = st("a5sm",  fontName="Helvetica", fontSize=9*f, leading=12*f,
+                       alignment=1, autoLeading="max")
+
+    def gap(k=1):
+        return Spacer(1, 0.3*cm*p*k)
+
+    # Banner
+    banner = Table([
+        [Paragraph("MARANATHA SCHOOLS", title_style)],
+        [Paragraph(f"Student Report Card  |  {escape(exam_type)}  |  "
+                   f"{escape(student.term)}  |  {year}", sub_style)],
+    ], colWidths=[width])
+    banner.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), NAVY),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4 + 2*p),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4 + 2*p),
+    ]))
+
+    # Student information
+    info_data = [
+        [Paragraph("Full Name", label_style),     Paragraph(escape(student.full_name), value_style),
+         Paragraph("Class", label_style),         Paragraph(escape(student.class_name), value_style)],
+        [Paragraph("Term", label_style),          Paragraph(escape(student.term), value_style),
+         Paragraph("Academic Year", label_style), Paragraph(str(year), value_style)],
+        [Paragraph("Class Teacher", label_style), Paragraph(escape(teacher.full_name), value_style),
+         Paragraph("Exam Type", label_style),     Paragraph(escape(exam_type), value_style)],
+    ]
+    info_table = Table(info_data, colWidths=[width*0.21, width*0.29, width*0.21, width*0.29])
+    info_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), PALE),
+        ("GRID",          (0, 0), (-1, -1), 0.5, LINE),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), rp),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), rp),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 5),
+    ]))
+
+    # Subjects
+    subj_data = [["Subject", "Marks (/100)", "Grade", "Agg.", "Remark"]]
+    for subj, d in computed["subjects"].items():
+        subj_data.append([subj, str(d["mark"]), d["grade"], str(d["aggregate"]), d["remark"]])
+    subj_table = Table(subj_data, colWidths=[width*0.30, width*0.20, width*0.13,
+                                             width*0.12, width*0.25])
+    subj_table.setStyle(TableStyle([
+        ("BACKGROUND",     (0, 0), (-1, 0),  BLUE),
+        ("TEXTCOLOR",      (0, 0), (-1, 0),  WHITE),
+        ("FONTNAME",       (0, 0), (-1, 0),  "Helvetica-Bold"),
+        ("FONTNAME",       (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE",       (0, 0), (-1, -1), 9*f),
+        ("GRID",           (0, 0), (-1, -1), 0.5, LINE),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, PALE]),
+        ("ALIGN",          (1, 0), (3, -1),  "CENTER"),
+        ("VALIGN",         (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",     (0, 0), (-1, -1), rp),
+        ("BOTTOMPADDING",  (0, 0), (-1, -1), rp),
+        ("LEFTPADDING",    (0, 0), (-1, -1), 5),
+    ]))
+
+    # Summary
+    def stat(value, label):
+        return Paragraph(
+            f"<b><font color='#93c5fd' size='{16*f:.1f}'>{value}</font></b><br/>"
+            f"<font color='white' size='{8*f:.1f}'>{label}</font>", sum_style)
+
+    summary = Table([[
+        stat(computed["total"], f"Total / {computed['max_total']}"),
+        stat(computed["aggregate_sum"], "Aggregate Sum"),
+        stat(computed["division"], "Division"),
+    ]], colWidths=[width/3.0]*3)
+    summary.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), NAVY),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4*p),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4*p),
+    ]))
+
+    # Teacher's comment
+    comment_box = Table([[Paragraph(escape(computed["comment"]), comment_style)]],
+                        colWidths=[width])
+    comment_box.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), PALE),
+        ("LINEBEFORE",    (0, 0), (0, -1),  2, BLUE),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4*p),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4*p),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 8),
+    ]))
+
+    # Signatures
+    sig = Table([["Class Teacher's Signature & Date", "Head Teacher's Signature & Date"]],
+                colWidths=[width/2.0]*2)
+    sig.setStyle(TableStyle([
+        ("FONTNAME",   (0, 0), (-1, -1), "Helvetica"),
+        ("FONTSIZE",   (0, 0), (-1, -1), 8*f),
+        ("TEXTCOLOR",  (0, 0), (-1, -1), BLUE),
+        ("LINEABOVE",  (0, 0), (-1, -1), 0.5, BLUE),
+        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+    ]))
+
+    return [
+        banner, gap(),
+        Paragraph("STUDENT INFORMATION", section_style), Spacer(1, 3), info_table, gap(),
+        Paragraph("ACADEMIC PERFORMANCE", section_style), Spacer(1, 3), subj_table, gap(),
+        summary, gap(),
+        Paragraph("CLASS TEACHER'S COMMENT", section_style), Spacer(1, 3), comment_box,
+        gap(1.8),
+        sig,
+    ]
+
+
+def _fit_a5_flowables(student, computed, exam_type, width, height):
+    """Grow the spacing as far as it can go while the card still fits its A5 half."""
+    p = 2.5
+    content = _a5_report_flowables(student, computed, exam_type, width, p)
+    while p > 0.5 and _content_height(content, width) > height:
+        p = round(p - 0.1, 2)
+        content = _a5_report_flowables(student, computed, exam_type, width, p)
+    return content
+
+
+def _build_two_up_pdf(students, exam_type):
+    """Two A5 report cards per A4 landscape sheet. Returns PDF bytes (None if no marks)."""
+    page_w, page_h = landscape(A4)
+    half_w  = page_w / 2
+    margin  = 0.8 * cm
+    frame_w = half_w - 2*margin - 1     # 1pt slack so a card is never "too large"
+    frame_h = page_h - 2*margin - 1
+
+    cards = []
+    for student in students:
+        mark = _get_student_mark(student, exam_type)
+        if not mark:
+            continue
+        computed = compute_student_results(mark)
+        content  = _fit_a5_flowables(student, computed, exam_type, frame_w, frame_h)
+        cards.append(KeepInFrame(frame_w, frame_h, content, mode="shrink", vAlign="TOP"))
+
+    if not cards:
+        return None
+
+    buf = io.BytesIO()
+    doc = BaseDocTemplate(buf, pagesize=landscape(A4),
+                          leftMargin=0, rightMargin=0, topMargin=0, bottomMargin=0)
+
+    frames = [
+        Frame(0,      0, half_w, page_h, leftPadding=margin, rightPadding=margin,
+              topPadding=margin, bottomPadding=margin, id="left"),
+        Frame(half_w, 0, half_w, page_h, leftPadding=margin, rightPadding=margin,
+              topPadding=margin, bottomPadding=margin, id="right"),
+    ]
+
+    def cut_line(canvas, _doc):
+        canvas.saveState()
+        canvas.setStrokeColor(colors.HexColor("#9ca3af"))
+        canvas.setDash(3, 3)
+        canvas.setLineWidth(0.5)
+        canvas.line(half_w, 0.5*cm, half_w, page_h - 0.5*cm)
+        canvas.restoreState()
+
+    doc.addPageTemplates([PageTemplate(id="two-up", frames=frames, onPage=cut_line)])
+
+    story = []
+    for i, card in enumerate(cards):
+        if i > 0:
+            story.append(FrameBreak())
+        story.append(card)
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.read()
 
 # ── Routes ───────────────────────────────────────────────────────────────────
 
@@ -601,7 +809,20 @@ def bulk_download_merged():
     if not student_ids:
         flash("Please select at least one student.", "warning")
         return redirect(url_for("reports.reports_home"))
-
+    
+    if exam_type != "Combined":
+        students = [Student.query.get(int(sid)) for sid in student_ids]
+        pdf_bytes = _build_two_up_pdf([s for s in students if s], exam_type)
+        if not pdf_bytes:
+            flash("No marks found for the selected students.", "warning")
+            return redirect(url_for("reports.reports_home"))
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"ReportCards_{exam_type}_2-per-page.pdf"
+        )
+    
     merger = PdfWriter()
     included = 0
 

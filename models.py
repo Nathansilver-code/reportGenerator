@@ -155,3 +155,32 @@ class Mark(db.Model):
 
     def __repr__(self):
         return f"<Mark student_id={self.student_id} exam_type={self.exam_type} term={self.term} year={self.year} total={self.total}>"
+
+class NurseryReport(db.Model):
+    __tablename__ = "nursery_reports"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    full_name   = db.Column(db.String(150), nullable=False)
+    class_name  = db.Column(db.String(20),  nullable=False)
+    term        = db.Column(db.String(10),  nullable=False)
+    year        = db.Column(db.Integer,     nullable=False)
+    report_type = db.Column(db.String(20),  nullable=False, default="End of Term")
+
+    teacher_id    = db.Column(db.Integer, db.ForeignKey("teachers.id"), nullable=False)
+    class_planner = db.Column(db.String(120), nullable=False, default="")
+
+    # {"learning_dev_one": "Good", "punctual": "Outstanding", ...}
+    grades = db.Column(db.JSON, nullable=False, default=dict)
+
+    head_remarks     = db.Column(db.Text,        nullable=False, default="")
+    next_term_begins = db.Column(db.String(60),  nullable=False, default="")
+    fees_day         = db.Column(db.String(120), nullable=False, default="")
+    fees_boarders    = db.Column(db.String(60),  nullable=False, default="")
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    teacher = db.relationship("Teacher")
+
+    __table_args__ = (
+        db.UniqueConstraint("full_name", "class_name", "term", "year", "report_type",
+                            name="uq_nursery_report"),
+    )

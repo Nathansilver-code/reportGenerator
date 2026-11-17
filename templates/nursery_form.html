@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if report else 'New' }} Nursery Report — PrimaryTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+  .grade-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 0.75rem; flex-wrap: wrap;
+    padding: 0.6rem 0; border-bottom: 1px solid var(--border);
+  }
+  .grade-label { font-weight: 600; color: var(--primary); min-width: 190px; }
+  .chips { display: flex; gap: 0.4rem; flex-wrap: wrap; position: relative; }
+
+  /* the radio buttons stay in the page (so validation works) but are invisible */
+  .chips input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem; font-weight: 600;
+    color: var(--primary); background: var(--white);
+    cursor: pointer; user-select: none;
+  }
+  .chip::before {
+    content: ""; width: 0.65rem; height: 0.65rem; border-radius: 50%;
+    background: var(--c); border: 1px solid rgba(0,0,0,0.15);
+  }
+  .chip:hover { border-color: var(--c); }
+  .chips input:checked + .chip {
+    background: var(--c); color: var(--t); border-color: var(--c);
+  }
+  .chips input:checked + .chip::before { background: var(--t); border-color: transparent; }
+  .chips input:focus-visible + .chip { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .section-title {
+    font-family: var(--font-display); color: var(--primary);
+    font-size: 1.05rem; margin: 1.5rem 0 0.25rem;
+    padding-bottom: 0.4rem; border-bottom: 2px solid var(--gold);
+  }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+  @media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <div style="max-width:760px; margin:0 auto;">
+
+    <div class="text-muted mb-1" style="font-size:0.85rem;">
+      <a href="{{ url_for('nursery.nursery_home', class_name=form.class_name, term=form.term) }}"
+         style="color:var(--primary);">← Back to nursery list</a>
+    </div>
+
+    <h1 style="font-family:'Merriweather',serif; color:var(--primary); margin-bottom:0.3rem;">
+      {{ 'Edit Nursery Report' if report else 'New Nursery Report' }}
+    </h1>
+    <p class="text-muted mb-1">Choose a grade for every item, then save.</p>
+
+    <div class="card mt-2">
+      <form method="POST"
+            action="{{ url_for('nursery.edit_report', report_id=report.id) if report else url_for('nursery.new_report') }}">
+
+        <h2 class="card-title">Learner details</h2>
+
+        <div class="form-group">
+          <label class="form-label" for="full_name">Learner's full name</label>
+          <input type="text" id="full_name" name="full_name" class="form-control"
+                 value="{{ form.full_name }}" maxlength="150" placeholder="e.g. Nanyange Erastus M" required />
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group">
+            <label class="form-label" for="class_name">Class</label>
+            <select id="class_name" name="class_name" class="form-control" required>
+              {% for c in classes %}
+              <option value="{{ c }}" {% if form.class_name == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="term">Term</label>
+            <select id="term" name="term" class="form-control" required>
+              {% for t in terms %}
+              <option value="{{ t }}" {% if form.term == t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="year">Academic year</label>
+            <input type="number" id="year" name="year" class="form-control"
+                   value="{{ form.year }}" min="2000" max="2100" required />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="report_type">Report type</label>
+            <select id="report_type" name="report_type" class="form-control" required>
+              {% for rt in report_types %}
+              <option value="{{ rt }}" {% if form.report_type == rt %}selected{% endif %}>{{ rt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="class_planner">Class planner</label>
+            <input type="text" id="class_planner" name="class_planner" class="form-control"
+                   value="{{ form.class_planner }}" maxlength="120" />
+          </div>
+        </div>
+
+        <h3 class="section-title">Skills and abilities</h3>
+        {% for key, label in skills %}
+        <div class="grade-row">
+          <div class="grade-label">{{ label }}</div>
+          <div class="chips">
+            {% for g in grades %}
+            <input type="radio" id="{{ key }}_{{ loop.index }}" name="g_{{ key }}" value="{{ g.name }}"
+                   {% if form.grades.get(key) == g.name %}checked{% endif %} required />
+            <label for="{{ key }}_{{ loop.index }}" class="chip" style="--c:{{ g.color }}; --t:{{ g.text }};">{{ g.name }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        <h3 class="section-title">Personality and character</h3>
+        {% for key, label in traits %}
+        <div class="grade-row">
+          <div class="grade-label">{{ label }}</div>
+          <div class="chips">
+            {% for g in grades %}
+            <input type="radio" id="{{ key }}_{{ loop.index }}" name="g_{{ key }}" value="{{ g.name }}"
+                   {% if form.grades.get(key) == g.name %}checked{% endif %} required />
+            <label for="{{ key }}_{{ loop.index }}" class="chip" style="--c:{{ g.color }}; --t:{{ g.text }};">{{ g.name }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        <h3 class="section-title">Remarks, next term and fees</h3>
+
+        <div class="form-group">
+          <label class="form-label" for="head_remarks">Head teacher's remarks</label>
+          <textarea id="head_remarks" name="head_remarks" class="form-control" rows="3"
+                    maxlength="1000" placeholder="e.g. A good report">{{ form.head_remarks }}</textarea>
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group">
+            <label class="form-label" for="next_term_begins">Next term begins on</label>
+            <input type="text" id="next_term_begins" name="next_term_begins" class="form-control"
+                   value="{{ form.next_term_begins }}" maxlength="60" placeholder="e.g. 14th September 2026" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fees_day">Fees (day)</label>
+            <input type="text" id="fees_day" name="fees_day" class="form-control"
+                   value="{{ form.fees_day }}" maxlength="120" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fees_boarders">Fees (boarders)</label>
+            <input type="text" id="fees_boarders" name="fees_boarders" class="form-control"
+                   value="{{ form.fees_boarders }}" maxlength="60" placeholder="e.g. 650,000/=" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1.25rem;">
+          {% if report %}
+          <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center;">✔ Save changes</button>
+          {% else %}
+          <button type="submit" name="after" value="another" class="btn btn-primary"
+                  style="flex:1; justify-content:center;">✔ Save &amp; add another</button>
+          <button type="submit" name="after" value="list" class="btn btn-outline">Save &amp; view list</button>
+          {% endif %}
+          <a href="{{ url_for('nursery.nursery_home', class_name=form.class_name, term=form.term) }}"
+             class="btn btn-outline">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

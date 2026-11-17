@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Nursery Report — {{ report.full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .nc-card {
+    max-width: 780px; margin: 0 auto; background: #fff;
+    border: 2px solid var(--primary-mid); border-radius: var(--radius);
+    padding: 1.4rem 1.8rem; box-shadow: 0 4px 20px rgba(13,43,110,0.15);
+  }
+  .nc-header {
+    display: flex; align-items: center; gap: 1rem;
+    border-bottom: 3px solid var(--gold); padding-bottom: 0.8rem; margin-bottom: 0.8rem;
+  }
+  .nc-header img { height: 84px; width: auto; }
+  .nc-header .nc-text { flex: 1; text-align: center; }
+  .nc-header h1 {
+    font-family: 'Merriweather', serif; font-size: 1.2rem; margin: 0 0 0.25rem;
+    color: var(--primary); letter-spacing: 0.5px;
+  }
+  .nc-header p { margin: 0; font-size: 0.78rem; color: var(--primary-mid); line-height: 1.5; }
+
+  .nc-title {
+    text-align: center; font-family: 'Merriweather', serif; font-size: 1.05rem;
+    color: var(--primary); text-decoration: underline; margin: 0.4rem 0 0.9rem;
+  }
+
+  .nc-info {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    border: 1px solid var(--border); background: var(--pale); margin-bottom: 1rem;
+  }
+  .nc-info div { padding: 0.45rem 0.7rem; border: 0.5px solid var(--border); font-size: 0.9rem; }
+  .nc-info label { font-size: 0.7rem; font-weight: 700; color: var(--primary); margin-right: 0.4rem; }
+
+  .nc-grades { width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-bottom: 1rem; }
+  .nc-grades th {
+    background: var(--primary); color: #fff; padding: 0.5rem 0.8rem; text-align: left;
+    font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .nc-grades th + th { text-align: center; width: 38%; }
+  .nc-grades td { padding: 0; font-family: var(--font-body); border-bottom: none; }
+  .nc-grades td.item { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); color: var(--primary); }
+  .nc-grades .bar {
+    text-align: center; font-weight: 700; font-size: 0.82rem; padding: 0.5rem 0.4rem;
+  }
+  .nc-grades tr, .nc-grades tr:hover, .nc-grades tbody tr:nth-child(even) { background: transparent; }
+
+  .nc-box { border: 1px solid var(--border); margin-bottom: 0.7rem; }
+  .nc-box .nc-row { display: flex; gap: 0.6rem; padding: 0.5rem 0.8rem; font-size: 0.9rem; }
+  .nc-box .nc-row + .nc-row { border-top: 1px solid var(--border); }
+  .nc-box .nc-label { font-weight: 700; font-size: 0.72rem; color: var(--primary); min-width: 170px; }
+  .nc-remarks { font-style: italic; color: var(--primary); min-height: 2.4rem; white-space: pre-line; }
+
+  .nc-legend { margin-top: 1rem; }
+  .nc-legend .nc-legend-title {
+    text-align: center; font-weight: 700; font-size: 0.78rem; color: var(--primary); margin-bottom: 0.3rem;
+  }
+  .nc-legend .nc-legend-bar { display: flex; gap: 3px; }
+  .nc-legend .nc-legend-bar div {
+    flex: 1; text-align: center; font-size: 0.68rem; font-weight: 700; padding: 0.4rem 0.2rem;
+    text-transform: uppercase;
+  }
+  .nc-foot {
+    text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--primary-mid);
+    margin-top: 0.9rem; letter-spacing: 0.5px;
+  }
+
+  @media print {
+    .no-print { display: none !important; }
+    .nc-card { border: 1.5px solid #000; box-shadow: none; max-width: 100%; padding: 0.7rem 1rem; }
+    .nc-card, .nc-card * {
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .main-content { padding: 0 !important; margin: 0 !important; max-width: none; }
+    .nc-header { padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+    .nc-header img { height: 70px; }
+    .nc-title { margin: 0.2rem 0 0.5rem; }
+    .nc-info { margin-bottom: 0.6rem; }
+    .nc-grades { margin-bottom: 0.6rem; }
+    .nc-grades th { padding: 0.35rem 0.8rem; }
+    .nc-grades td.item { padding: 0.35rem 0.8rem; }
+    .nc-grades .bar { padding: 0.35rem 0.4rem; }
+    .nc-box { margin-bottom: 0.5rem; }
+    .nc-box .nc-row { padding: 0.35rem 0.8rem; }
+    .nc-legend { margin-top: 0.6rem; }
+    .nc-foot { margin-top: 0.5rem; }
+    @page { size: A4 portrait; margin: 1cm; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+
+  <div class="no-print" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+    <button onclick="window.print()" class="btn btn-primary">🖨 Print Report Card</button>
+    <a href="{{ url_for('nursery.download_pdf', report_id=report.id) }}" class="btn btn-primary">⬇ Download PDF</a>
+    <a href="{{ url_for('nursery.edit_report', report_id=report.id) }}" class="btn btn-outline">✏ Edit</a>
+    <a href="{{ url_for('nursery.nursery_home', class_name=report.class_name, term=report.term) }}"
+       class="btn btn-outline">← Nursery list</a>
+  </div>
+
+  <div class="nc-card">
+
+    <div class="nc-header">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" onerror="this.style.display='none'" />
+      <div class="nc-text">
+        <h1>{{ school_name }}</h1>
+        <p>{{ school_address }}</p>
+        <p>{{ school_contact }}</p>
+      </div>
+    </div>
+
+    <h2 class="nc-title">{{ title }}</h2>
+
+    <div class="nc-info">
+      <div><label>NAME:</label><strong>{{ report.full_name }}</strong></div>
+      <div><label>CLASS:</label>{{ report.class_name }}</div>
+      <div><label>CLASS PLANNER:</label>{{ report.class_planner or '-' }}</div>
+      <div><label>TERM:</label>{{ report.term }} - {{ report.year }}</div>
+    </div>
+
+    {% for heading, items in [('Skills and abilities', skills), ('Personality and character', traits)] %}
+    <table class="nc-grades">
+      <thead><tr><th>{{ heading }}</th><th>Grade</th></tr></thead>
+      <tbody>
+        {% for key, label in items %}
+        {% set name = report.grades.get(key) %}
+        {% set g = grade_map.get(name) %}
+        <tr>
+          <td class="item">{{ label }}</td>
+          <td>
+            {% if g %}
+            <div class="bar" style="background:{{ g.color }}; color:{{ g.text }};">{{ name }}</div>
+            {% else %}
+            <div class="bar" style="color:#888;">-</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+
+    <div class="nc-box">
+      <div class="nc-row">
+        <div class="nc-label">HEAD TEACHER'S REMARKS:</div>
+        <div class="nc-remarks">{{ report.head_remarks }}</div>
+      </div>
+    </div>
+
+    <div class="nc-box">
+      <div class="nc-row"><div class="nc-label">NEXT TERM BEGINS ON:</div><div>{{ report.next_term_begins or '-' }}</div></div>
+      <div class="nc-row"><div class="nc-label">FEES (DAY):</div><div>{{ report.fees_day or '-' }}</div></div>
+      <div class="nc-row"><div class="nc-label">FEES (BOARDERS):</div><div>{{ report.fees_boarders or '-' }}</div></div>
+    </div>
+
+    <div class="nc-legend">
+      <div class="nc-legend-title">GRADING SYSTEM</div>
+      <div class="nc-legend-bar">
+        {% for g in grades %}
+        <div style="background:{{ g.color }}; color:{{ g.text }};">{{ g.name }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="nc-foot">NOT VALID WITHOUT THE SCHOOL STAMP</div>
+  </div>
+
+</div>
+{% endblock %}

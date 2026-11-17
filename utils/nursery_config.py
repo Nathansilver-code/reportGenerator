@@ -1,0 +1,48 @@
+"""
+Settings for the nursery section.
+Edit THIS file to rename classes, change colours, or add/remove report items.
+(Report items live in the database as JSON, so changing them needs no migration.)
+"""
+
+SCHOOL_NAME    = "MARANATHA NURSERY SCHOOL - WAMPEEWO"
+SCHOOL_ADDRESS = "Located 8 miles off Kampala-Gayaza Road, Magere - Kito Village"
+SCHOOL_CONTACT = "P.O Box 153490, Kampala   |   Tel: 0702-619008 / 0787-908562"
+
+NURSERY_CLASSES = ["ECD ONE", "ECD TWO", "ECD THREE"]
+TERMS           = ["Term 1", "Term 2", "Term 3"]
+REPORT_TYPES    = ["End of Term", "Mid Term"]
+
+DEFAULT_FEES_DAY = "Refer to requirement sheet"
+
+# Best to weakest, in the order shown on the card's grading bar
+GRADE_LEVELS = [
+    {"name": "Outstanding",  "color": "#d62828", "text": "#ffffff"},
+    {"name": "Very Good",    "color": "#2f6fdb", "text": "#ffffff"},
+    {"name": "Good",         "color": "#f7d917", "text": "#1f2937"},
+    {"name": "Satisfactory", "color": "#5e2a9c", "text": "#ffffff"},
+    {"name": "Fair",         "color": "#43a047", "text": "#ffffff"},
+]
+GRADE_NAMES = [g["name"] for g in GRADE_LEVELS]
+GRADE_MAP   = {g["name"]: g for g in GRADE_LEVELS}
+
+SKILLS = [
+    ("learning_dev_one", "Learning development one"),
+    ("math_concepts",    "Mathematical concepts"),
+    ("social_dev",       "Social development"),
+    ("learning_dev_two", "Learning development two"),
+    ("health_habits",    "Health habits"),
+]
+
+TRAITS = [
+    ("friendly",   "Friendly and courteous"),
+    ("punctual",   "Punctual"),
+    ("clean",      "Clean and orderly"),
+    ("attentive",  "Attentive"),
+    ("respectful", "Respectful"),
+]
+
+ALL_ITEMS = SKILLS + TRAITS
+
+
+def report_title(report_type):
+    return f"{report_type.upper()} CLASS REPORT"

@@ -28,10 +28,12 @@ def create_app():
     from routes.auth import auth_bp
     from routes.marks import marks_bp
     from routes.reports import reports_bp
+    from routes.nursery import nursery_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(marks_bp)
     app.register_blueprint(reports_bp)
+    app.register_blueprint(nursery_bp)
 
     
     with app.app_context():

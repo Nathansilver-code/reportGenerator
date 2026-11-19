@@ -3,88 +3,127 @@
 
 {% block extra_css %}
 <style>
-  .nc-card {
-    max-width: 780px; margin: 0 auto; background: #fff;
-    border: 2px solid var(--primary-mid); border-radius: var(--radius);
-    padding: 1.4rem 1.8rem; box-shadow: 0 4px 20px rgba(13,43,110,0.15);
+  /* ---- the framed sheet with a coloured bead border ---- */
+  .nc-sheet {
+    position: relative; max-width: 800px; margin: 0 auto; background-color: #fff;
+    border: 2px solid var(--primary); border-radius: 14px;
+    padding: 34px 38px; box-shadow: 0 4px 20px rgba(13,43,110,0.15);
   }
+  .nc-sheet::after {                       /* thin inner line */
+    content: ""; position: absolute; inset: 14px; border: 1.5px solid var(--primary);
+    border-radius: 5px; pointer-events: none;
+  }
+  .nc-bead { position: absolute; }
+  .nc-bead.h {
+    left: 14px; right: 14px; height: 12px; background-repeat: repeat-x; background-size: 60px 12px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='12'><circle cx='6' cy='6' r='3.6' fill='%23d62828'/><circle cx='18' cy='6' r='3.6' fill='%232f6fdb'/><circle cx='30' cy='6' r='3.6' fill='%23f7d917'/><circle cx='42' cy='6' r='3.6' fill='%235e2a9c'/><circle cx='54' cy='6' r='3.6' fill='%2343a047'/></svg>");
+  }
+  .nc-bead.v {
+    top: 14px; bottom: 14px; width: 12px; background-repeat: repeat-y; background-size: 12px 60px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='60'><circle cx='6' cy='6' r='3.6' fill='%23d62828'/><circle cx='6' cy='18' r='3.6' fill='%232f6fdb'/><circle cx='6' cy='30' r='3.6' fill='%23f7d917'/><circle cx='6' cy='42' r='3.6' fill='%235e2a9c'/><circle cx='6' cy='54' r='3.6' fill='%2343a047'/></svg>");
+  }
+  .nc-bead.top { top: 1px; }   .nc-bead.bottom { bottom: 1px; }
+  .nc-bead.left { left: 1px; } .nc-bead.right { right: 1px; }
+  .nc-star { position: absolute; width: 30px; height: 30px; z-index: 2; }
+  .nc-star.tl { top: -9px; left: -9px; }   .nc-star.tr { top: -9px; right: -9px; }
+  .nc-star.bl { bottom: -9px; left: -9px; } .nc-star.br { bottom: -9px; right: -9px; }
+
+  .nc-inner { position: relative; z-index: 1; }
+
+  /* ---- header ---- */
   .nc-header {
-    display: flex; align-items: center; gap: 1rem;
-    border-bottom: 3px solid var(--gold); padding-bottom: 0.8rem; margin-bottom: 0.8rem;
+    display: flex; align-items: center; gap: 0.8rem;
+    border-bottom: 3px solid var(--gold); padding-bottom: 0.6rem; margin-bottom: 0.7rem;
   }
-  .nc-header img { height: 84px; width: auto; }
+  .nc-header .nc-crest { height: 80px; width: auto; }
   .nc-header .nc-text { flex: 1; text-align: center; }
+  .nc-header .nc-sun { height: 74px; width: auto; }
   .nc-header h1 {
-    font-family: 'Merriweather', serif; font-size: 1.2rem; margin: 0 0 0.25rem;
-    color: var(--primary); letter-spacing: 0.5px;
+    font-family: 'Merriweather', serif; font-size: calc(0.96rem * var(--k)); white-space: nowrap; margin: 0 0 0.2rem;
+    color: var(--primary); letter-spacing: 0.4px;
   }
-  .nc-header p { margin: 0; font-size: 0.78rem; color: var(--primary-mid); line-height: 1.5; }
+  .nc-header p { margin: 0; font-size: calc(0.74rem * var(--k)); color: var(--primary-mid); line-height: 1.5; }
 
   .nc-title {
-    text-align: center; font-family: 'Merriweather', serif; font-size: 1.05rem;
-    color: var(--primary); text-decoration: underline; margin: 0.4rem 0 0.9rem;
+    text-align: center; font-family: 'Merriweather', serif; font-size: calc(1.05rem * var(--k));
+    color: var(--primary); text-decoration: underline; margin: 0.3rem 0 0.8rem;
   }
 
   .nc-info {
     display: grid; grid-template-columns: 1fr 1fr; gap: 0;
-    border: 1px solid var(--border); background: var(--pale); margin-bottom: 1rem;
+    border: 1px solid var(--border); background: var(--pale); margin-bottom: 0.9rem;
   }
-  .nc-info div { padding: 0.45rem 0.7rem; border: 0.5px solid var(--border); font-size: 0.9rem; }
-  .nc-info label { font-size: 0.7rem; font-weight: 700; color: var(--primary); margin-right: 0.4rem; }
+  .nc-info div { padding: 0.4rem 0.7rem; border: 0.5px solid var(--border); font-size: calc(0.9rem * var(--k)); }
+  .nc-info label { font-size: calc(0.7rem * var(--k)); font-weight: 700; color: var(--primary); margin-right: 0.4rem; }
 
-  .nc-grades { width: 100%; border-collapse: separate; border-spacing: 0 3px; margin-bottom: 1rem; }
+  /* ---- grade tables with a cartoon beside each ---- */
+  .nc-sec { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.9rem; }
+  .nc-sec .nc-art { width: 150px; flex-shrink: 0; height: auto; }
+  .nc-grades { flex: 1; width: 100%; border-collapse: separate; border-spacing: 0 3px; }
   .nc-grades th {
     background: var(--primary); color: #fff; padding: 0.5rem 0.8rem; text-align: left;
-    font-size: 0.78rem; letter-spacing: 0.5px; text-transform: uppercase;
+    font-size: calc(0.78rem * var(--k)); letter-spacing: 0.5px; text-transform: uppercase;
   }
-  .nc-grades th + th { text-align: center; width: 38%; }
+  .nc-grades th + th { text-align: center; width: 40%; }
   .nc-grades td { padding: 0; font-family: var(--font-body); border-bottom: none; }
-  .nc-grades td.item { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); color: var(--primary); }
-  .nc-grades .bar {
-    text-align: center; font-weight: 700; font-size: 0.82rem; padding: 0.5rem 0.4rem;
-  }
+  .nc-grades td.item { padding: 0.45rem 0.8rem; border-bottom: 1px solid var(--border); color: var(--primary); font-size: calc(0.92rem * var(--k)); }
+  .nc-grades .bar { text-align: center; font-weight: 700; font-size: calc(0.82rem * var(--k)); padding: 0.45rem 0.4rem; }
   .nc-grades tr, .nc-grades tr:hover, .nc-grades tbody tr:nth-child(even) { background: transparent; }
 
-  .nc-box { border: 1px solid var(--border); margin-bottom: 0.7rem; }
-  .nc-box .nc-row { display: flex; gap: 0.6rem; padding: 0.5rem 0.8rem; font-size: 0.9rem; }
+  .nc-box { border: 1px solid var(--border); margin-bottom: 0.6rem; background: rgba(255,255,255,0.7); }
+  .nc-box .nc-row { display: flex; gap: 0.6rem; padding: 0.45rem 0.8rem; font-size: calc(0.9rem * var(--k)); }
   .nc-box .nc-row + .nc-row { border-top: 1px solid var(--border); }
-  .nc-box .nc-label { font-weight: 700; font-size: 0.72rem; color: var(--primary); min-width: 170px; }
-  .nc-remarks { font-style: italic; color: var(--primary); min-height: 2.4rem; white-space: pre-line; }
+  .nc-box .nc-label { font-weight: 700; font-size: calc(0.72rem * var(--k)); color: var(--primary); min-width: calc(170px * var(--k)); }
+  .nc-remarks { font-size: calc(0.9rem * var(--k)); font-style: italic; color: var(--primary); min-height: 2.2rem; white-space: pre-line; }
 
-  .nc-legend { margin-top: 1rem; }
+  .nc-legend { margin-top: 0.9rem; }
   .nc-legend .nc-legend-title {
-    text-align: center; font-weight: 700; font-size: 0.78rem; color: var(--primary); margin-bottom: 0.3rem;
+    text-align: center; font-weight: 700; font-size: calc(0.78rem * var(--k)); color: var(--primary); margin-bottom: 0.3rem;
   }
   .nc-legend .nc-legend-bar { display: flex; gap: 3px; }
   .nc-legend .nc-legend-bar div {
-    flex: 1; text-align: center; font-size: 0.68rem; font-weight: 700; padding: 0.4rem 0.2rem;
+    flex: 1; text-align: center; font-size: calc(0.68rem * var(--k)); font-weight: 700; padding: 0.4rem 0.2rem;
     text-transform: uppercase;
   }
+  .nc-strip { display: block; width: 78%; max-width: 560px; height: auto; margin: 0.7rem auto 0.2rem; }
   .nc-foot {
-    text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--primary-mid);
-    margin-top: 0.9rem; letter-spacing: 0.5px;
+    text-align: center; font-size: calc(0.7rem * var(--k)); font-weight: 700; color: var(--primary-mid);
+    margin-top: 0.3rem; letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 680px) {              /* small phone screens: drop the side cartoons */
+    .nc-sheet { padding: 28px 22px; }
+    .nc-header h1 { white-space: normal; }
+    .nc-sec .nc-art, .nc-header .nc-sun { display: none; }
+    .nc-box .nc-row { flex-direction: column; gap: 0.1rem; }
   }
 
   @media print {
+    .nc-sheet { --k: {{ print_font_scale }} !important; }
     .no-print { display: none !important; }
-    .nc-card { border: 1.5px solid #000; box-shadow: none; max-width: 100%; padding: 0.7rem 1rem; }
-    .nc-card, .nc-card * {
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
+    .nc-sheet { box-shadow: none; max-width: 100%; padding: 22px 24px; border-radius: 12px; }
+    .nc-sheet, .nc-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .main-content { padding: 0 !important; margin: 0 !important; max-width: none; }
-    .nc-header { padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
-    .nc-header img { height: 70px; }
-    .nc-title { margin: 0.2rem 0 0.5rem; }
-    .nc-info { margin-bottom: 0.6rem; }
-    .nc-grades { margin-bottom: 0.6rem; }
-    .nc-grades th { padding: 0.35rem 0.8rem; }
-    .nc-grades td.item { padding: 0.35rem 0.8rem; }
-    .nc-grades .bar { padding: 0.35rem 0.4rem; }
-    .nc-box { margin-bottom: 0.5rem; }
-    .nc-box .nc-row { padding: 0.35rem 0.8rem; }
-    .nc-legend { margin-top: 0.6rem; }
-    .nc-foot { margin-top: 0.5rem; }
-    @page { size: A4 portrait; margin: 1cm; }
+    .nc-header { padding-bottom: 0.3rem; margin-bottom: 0.35rem; gap: 0.6rem; }
+    .nc-header .nc-crest { height: 58px; }
+    .nc-header .nc-sun { height: 54px; }
+    .nc-title { margin: 0 0 0.3rem; }
+    .nc-info { margin-bottom: 0.35rem; }
+    .nc-info div { padding: 0.25rem 0.7rem; }
+    .nc-sec { margin-bottom: 0.3rem; gap: 0.5rem; }
+    .nc-sec .nc-art { width: 104px; }
+    .nc-grades { border-spacing: 0 2px; }
+    .nc-grades th { padding: 0.22rem 0.8rem; }
+    .nc-grades td.item { padding: 0.2rem 0.8rem; }
+    .nc-grades .bar { padding: 0.2rem 0.4rem; }
+    .nc-box { margin-bottom: 0.3rem; }
+    .nc-box .nc-row { padding: 0.2rem 0.8rem; }
+    .nc-remarks { min-height: 1.6rem; }
+    .nc-legend { margin-top: 0.35rem; }
+    .nc-legend .nc-legend-bar div { padding: 0.28rem 0.2rem; }
+    .nc-strip { margin: 0.25rem auto 0.05rem; width: 58%; }
+    .nc-foot { margin-top: 0.15rem; }
+    @page { size: A4 portrait; margin: 0.8cm; }
   }
 </style>
 {% endblock %}
@@ -100,71 +139,95 @@
        class="btn btn-outline">← Nursery list</a>
   </div>
 
-  <div class="nc-card">
+  {% set art = 'img/nursery/' %}
+  <div class="nc-sheet" style="--k: {{ font_scale }};">
 
-    <div class="nc-header">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" onerror="this.style.display='none'" />
-      <div class="nc-text">
-        <h1>{{ school_name }}</h1>
-        <p>{{ school_address }}</p>
-        <p>{{ school_contact }}</p>
-      </div>
-    </div>
-
-    <h2 class="nc-title">{{ title }}</h2>
-
-    <div class="nc-info">
-      <div><label>NAME:</label><strong>{{ report.full_name }}</strong></div>
-      <div><label>CLASS:</label>{{ report.class_name }}</div>
-      <div><label>CLASS PLANNER:</label>{{ report.class_planner or '-' }}</div>
-      <div><label>TERM:</label>{{ report.term }} - {{ report.year }}</div>
-    </div>
-
-    {% for heading, items in [('Skills and abilities', skills), ('Personality and character', traits)] %}
-    <table class="nc-grades">
-      <thead><tr><th>{{ heading }}</th><th>Grade</th></tr></thead>
-      <tbody>
-        {% for key, label in items %}
-        {% set name = report.grades.get(key) %}
-        {% set g = grade_map.get(name) %}
-        <tr>
-          <td class="item">{{ label }}</td>
-          <td>
-            {% if g %}
-            <div class="bar" style="background:{{ g.color }}; color:{{ g.text }};">{{ name }}</div>
-            {% else %}
-            <div class="bar" style="color:#888;">-</div>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <!-- coloured bead border + corner stars -->
+    <i class="nc-bead h top"></i><i class="nc-bead h bottom"></i>
+    <i class="nc-bead v left"></i><i class="nc-bead v right"></i>
+    {% for pos in ['tl', 'tr', 'bl', 'br'] %}
+    <svg class="nc-star {{ pos }}" viewBox="0 0 30 30" aria-hidden="true">
+      <polygon points="15,1.5 18.6,10.6 28.3,11.2 20.8,17.4 23.2,26.8 15,21.6 6.8,26.8 9.2,17.4 1.7,11.2 11.4,10.6"
+               fill="#ffd43b" stroke="#f08c00" stroke-width="1.8" stroke-linejoin="round"/>
+    </svg>
     {% endfor %}
 
-    <div class="nc-box">
-      <div class="nc-row">
-        <div class="nc-label">HEAD TEACHER'S REMARKS:</div>
-        <div class="nc-remarks">{{ report.head_remarks }}</div>
+    <div class="nc-inner">
+
+      <div class="nc-header">
+        <img class="nc-crest" src="{{ url_for('static', filename=art ~ 'crest.png') }}" alt=""
+             onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/logo.png') }}';" />
+        <div class="nc-text">
+          <h1>{{ school_name }}</h1>
+          <p>{{ school_address }}</p>
+          <p>{{ school_contact }}</p>
+        </div>
+        <img class="nc-sun" src="{{ url_for('static', filename=art ~ 'header_cartoon.png') }}" alt=""
+             onerror="this.style.display='none'" />
       </div>
-    </div>
 
-    <div class="nc-box">
-      <div class="nc-row"><div class="nc-label">NEXT TERM BEGINS ON:</div><div>{{ report.next_term_begins or '-' }}</div></div>
-      <div class="nc-row"><div class="nc-label">FEES (DAY):</div><div>{{ report.fees_day or '-' }}</div></div>
-      <div class="nc-row"><div class="nc-label">FEES (BOARDERS):</div><div>{{ report.fees_boarders or '-' }}</div></div>
-    </div>
+      <h2 class="nc-title">{{ title }}</h2>
 
-    <div class="nc-legend">
-      <div class="nc-legend-title">GRADING SYSTEM</div>
-      <div class="nc-legend-bar">
-        {% for g in grades %}
-        <div style="background:{{ g.color }}; color:{{ g.text }};">{{ g.name }}</div>
-        {% endfor %}
+      <div class="nc-info">
+        <div><label>NAME:</label><strong>{{ report.full_name }}</strong></div>
+        <div><label>CLASS:</label>{{ report.class_name }}</div>
+        <div><label>CLASS PLANNER:</label>{{ report.class_planner or '-' }}</div>
+        <div><label>TERM:</label>{{ report.term }} - {{ report.year }}</div>
       </div>
-    </div>
 
-    <div class="nc-foot">NOT VALID WITHOUT THE SCHOOL STAMP</div>
+      {% for heading, items, picture in [('Skills and abilities', skills, 'skills_cartoon.png'),
+                                         ('Personality and character', traits, 'character_cartoon.png')] %}
+      <div class="nc-sec">
+        <table class="nc-grades">
+          <thead><tr><th>{{ heading }}</th><th>Grade</th></tr></thead>
+          <tbody>
+            {% for key, label in items %}
+            {% set name = report.grades.get(key) %}
+            {% set g = grade_map.get(name) %}
+            <tr>
+              <td class="item">{{ label }}</td>
+              <td>
+                {% if g %}
+                <div class="bar" style="background:{{ g.color }}; color:{{ g.text }};">{{ name }}</div>
+                {% else %}
+                <div class="bar" style="color:#888;">-</div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <img class="nc-art" src="{{ url_for('static', filename=art ~ picture) }}" alt=""
+             onerror="this.style.display='none'" />
+      </div>
+      {% endfor %}
+
+      <div class="nc-box">
+        <div class="nc-row">
+          <div class="nc-label">HEAD TEACHER'S REMARKS:</div>
+          <div class="nc-remarks">{{ report.head_remarks }}</div>
+        </div>
+      </div>
+
+      <div class="nc-box">
+        <div class="nc-row"><div class="nc-label">NEXT TERM BEGINS ON:</div><div>{{ next_term_begins }}</div></div>
+        <div class="nc-row"><div class="nc-label">FEES (DAY):</div><div>{{ fees_day }}</div></div>
+        <div class="nc-row"><div class="nc-label">FEES (BOARDERS):</div><div>{{ fees_boarders }}</div></div>
+      </div>
+
+      <div class="nc-legend">
+        <div class="nc-legend-title">GRADING SYSTEM</div>
+        <div class="nc-legend-bar">
+          {% for g in grades %}
+          <div style="background:{{ g.color }}; color:{{ g.text }};">{{ g.name }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <img class="nc-strip" src="{{ url_for('static', filename=art ~ 'footer_strip.png') }}" alt=""
+           onerror="this.style.display='none'" />
+      <div class="nc-foot">NOT VALID WITHOUT THE SCHOOL STAMP</div>
+    </div>
   </div>
 
 </div>

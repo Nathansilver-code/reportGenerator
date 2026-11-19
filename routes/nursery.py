@@ -1,311 +1,395 @@
+"""Builds the nursery report card PDF (one card per A4 page, any number of learners).
+
+Artwork lives in static/img/nursery/:  crest, header_cartoon, skills_cartoon,
+character_cartoon, footer_strip  (all .png). Replace any of them with your own picture of
+the same name to change the look. A missing picture is simply left out.
+
+The writing is made as large as possible while the whole card still fits on one page:
+every size grows by the same factor (see PDF_MAX_FONT_SCALE in nursery_config.py).
+"""
 import io
+import math
 import os
-import re
-from datetime import datetime
+from xml.sax.saxutils import escape
 
-from flask import (Blueprint, render_template, request, redirect, url_for,
-                   flash, send_file, current_app, abort)
-from flask_login import login_required, current_user
+from PIL import Image as PILImage, ImageDraw, ImageFilter, ImageOps
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak,
+    KeepInFrame, Image,
+)
 
-from extensions import db
-from models import NurseryReport
 from utils.nursery_config import (
     SCHOOL_NAME, SCHOOL_ADDRESS, SCHOOL_CONTACT,
-    NURSERY_CLASSES, TERMS, REPORT_TYPES,
-    NEXT_TERM_BEGINS, FEES_DAY, FEES_BOARDERS, SCREEN_FONT_SCALE, PRINT_FONT_SCALE,
-    GRADE_LEVELS, GRADE_NAMES, GRADE_MAP, SKILLS, TRAITS, ALL_ITEMS, report_title,
+    NEXT_TERM_BEGINS, FEES_DAY, FEES_BOARDERS, PDF_MAX_FONT_SCALE, BACKGROUND_STRENGTH,
+    SKILLS, TRAITS, GRADE_LEVELS, GRADE_MAP, report_title,
 )
-from utils.nursery_pdf import build_nursery_pdf
 
-nursery_bp = Blueprint("nursery", __name__)
+NAVY = colors.HexColor("#0d2b6e")
+BLUE = colors.HexColor("#1a56b0")
+PALE = colors.HexColor("#eff6ff")
+LINE = colors.HexColor("#c7d7ef")
+GOLD = colors.HexColor("#c9a227")
+WHITE = colors.white
 
-
-# ── helpers ────────────────────────────────────────────────────────────────
-
-def _visible_query():
-    """Every logged-in user can see every nursery report (no per-teacher restriction)."""
-    return NurseryReport.query
-
-
-def _get_report(report_id):
-    return _visible_query().filter(NurseryReport.id == report_id).first_or_404()
+PAGE_MARGIN = 40          # space between the page edge and the content
+ROW_H = 25                # height of a grade-table row at normal writing size
+ART_W = 124               # width of the cartoon beside each grade table
 
 
-def _img_dir():
-    """The project's static/img folder (crest + nursery cartoons live here)."""
-    return os.path.join(current_app.root_path, "static", "img")
+# ── small helpers ──────────────────────────────────────────────────────────
+
+def _style(name, **kw):
+    return ParagraphStyle(name, spaceBefore=0, spaceAfter=0, **kw)
 
 
-def _pick(value, allowed, default):
-    return value if value in allowed else default
+def _asset(img_dir, *parts):
+    """Full path of a picture, or None if it is not there."""
+    if not img_dir:
+        return None
+    path = os.path.join(img_dir, *parts)
+    return path if os.path.exists(path) else None
 
 
-def _blank_form():
-    """Starting values for a new report; a few fields carry over from the last one."""
-    args = request.args
-    return {
-        "full_name":        "",
-        "class_name":       _pick(args.get("class_name"), NURSERY_CLASSES, NURSERY_CLASSES[0]),
-        "term":             _pick(args.get("term"), TERMS, TERMS[0]),
-        "report_type":      _pick(args.get("report_type"), REPORT_TYPES, REPORT_TYPES[0]),
-        "year":             datetime.utcnow().year,
-        "class_planner":    args.get("planner") or current_user.full_name,
-        "grades":           {},
-        "head_remarks":     "",
-    }
+def _fit_image(path, max_w, max_h):
+    iw, ih = ImageReader(path).getSize()
+    scale = min(max_w / iw, max_h / ih)
+    img = Image(path, width=iw * scale, height=ih * scale)
+    img.hAlign = "CENTER"
+    return img
 
 
-def _form_from_report(report):
-    return {
-        "full_name":        report.full_name,
-        "class_name":       report.class_name,
-        "term":             report.term,
-        "report_type":      report.report_type,
-        "year":             report.year,
-        "class_planner":    report.class_planner,
-        "grades":           dict(report.grades or {}),
-        "head_remarks":     report.head_remarks,
-    }
+def _star_path(canvas, cx, cy, r):
+    path = canvas.beginPath()
+    for i in range(10):
+        ang = math.radians(-90 + i * 36)
+        rr = r if i % 2 == 0 else r * 0.45
+        x, y = cx + rr * math.cos(ang), cy + rr * math.sin(ang)
+        path.moveTo(x, y) if i == 0 else path.lineTo(x, y)
+    path.close()
+    return path
 
 
-def _read_form():
-    f = request.form
-    return {
-        "full_name":        f.get("full_name", "").strip(),
-        "class_name":       f.get("class_name", ""),
-        "term":             f.get("term", ""),
-        "report_type":      f.get("report_type", ""),
-        "year":             f.get("year", "").strip(),
-        "class_planner":    f.get("class_planner", "").strip(),
-        "grades":           {key: f.get(f"g_{key}", "") for key, _ in ALL_ITEMS},
-        "head_remarks":     f.get("head_remarks", "").strip(),
-    }
+def _content_height(flowables, width):
+    return sum(fl.wrap(width, 10000)[1] for fl in flowables)
 
 
-def _validate(form):
-    """Returns a list of error messages (empty = OK). Converts form['year'] to int."""
-    errors = []
-    if not form["full_name"]:
-        errors.append("Learner's name is required.")
-    if form["class_name"] not in NURSERY_CLASSES:
-        errors.append("Please choose a valid class.")
-    if form["term"] not in TERMS:
-        errors.append("Please choose a valid term.")
-    if form["report_type"] not in REPORT_TYPES:
-        errors.append("Please choose a valid report type.")
-    try:
-        form["year"] = int(form["year"])
-        if not 2000 <= form["year"] <= 2100:
-            raise ValueError
-    except (ValueError, TypeError):
-        errors.append("Please enter a valid academic year, for example 2026.")
+# ── the faint picture behind the card (optional) ─────────────────────────────
 
-    limits = [("full_name", 150, "Name"), ("class_planner", 120, "Class planner"),
-              ("head_remarks", 1000, "Head teacher's remarks")]
-    for key, limit, label in limits:
-        if len(form[key]) > limit:
-            errors.append(f"{label} is too long (maximum {limit} characters).")
-
-    missing = [label for key, label in ALL_ITEMS if form["grades"].get(key) not in GRADE_NAMES]
-    if missing:
-        errors.append("Please grade every item. Missing: " + ", ".join(missing) + ".")
-    return errors
+BACKGROUND_NAMES = ("background.png", "background.jpg", "background.jpeg", "background.webp")
 
 
-def _find_duplicate(form, exclude_id=None):
-    query = NurseryReport.query.filter(
-        db.func.lower(NurseryReport.full_name) == form["full_name"].lower(),
-        NurseryReport.class_name == form["class_name"],
-        NurseryReport.term == form["term"],
-        NurseryReport.year == form["year"],
-        NurseryReport.report_type == form["report_type"],
-    )
-    if exclude_id:
-        query = query.filter(NurseryReport.id != exclude_id)
-    return query.first()
+def _load_ghost(img_dir):
+    """The optional background picture, faded and with soft edges (made once, in memory).
+    Returns (ImageReader, width, height) or None when there is no picture."""
+    for name in BACKGROUND_NAMES:
+        path = _asset(img_dir, "nursery", name)
+        if not path:
+            continue
+        try:
+            im = ImageOps.exif_transpose(PILImage.open(path)).convert("RGB")
+            im.thumbnail((900, 900))
+            w, h = im.size
+            mask = PILImage.new("L", (w, h), 0)
+            ImageDraw.Draw(mask).rounded_rectangle(
+                (w * 0.06, h * 0.06, w * 0.94, h * 0.94), radius=min(w, h) * 0.18, fill=255)
+            mask = mask.filter(ImageFilter.GaussianBlur(min(w, h) * 0.07))
+            mask = mask.point(lambda v: int(v * BACKGROUND_STRENGTH))
+            ghost = im.convert("RGBA")
+            ghost.putalpha(mask)
+            buf = io.BytesIO()
+            ghost.save(buf, "PNG")
+            buf.seek(0)
+            return ImageReader(buf), w, h
+        except Exception:          # an unreadable picture must never break the report
+            return None
+    return None
 
 
-def _render_form(form, report=None):
-    return render_template(
-        "nursery_form.html", form=form, report=report,
-        classes=NURSERY_CLASSES, terms=TERMS, report_types=REPORT_TYPES,
-        next_term_begins=NEXT_TERM_BEGINS, fees_day=FEES_DAY, fees_boarders=FEES_BOARDERS,
-        skills=SKILLS, traits=TRAITS, grades=GRADE_LEVELS,
-    )
+# ── the page border ─────────────────────────────────────────────────────────
+
+def _make_page_border(ghost):
+    """Page decorator: the faint picture (if any), then the bead border."""
+    def decorate(canvas, doc):
+        _draw_page_border(canvas, ghost)
+    return decorate
 
 
-def _apply(report, form):
-    report.full_name        = form["full_name"]
-    report.class_name       = form["class_name"]
-    report.term             = form["term"]
-    report.year             = form["year"]
-    report.report_type      = form["report_type"]
-    report.class_planner    = form["class_planner"]
-    report.grades           = dict(form["grades"])      # a new dict so the change is saved
-    report.head_remarks     = form["head_remarks"]
-    # next-term date and fees are printed from nursery_config.py, not typed in per learner
-    report.next_term_begins = ""
-    report.fees_day         = ""
-    report.fees_boarders    = ""
+def _draw_page_border(canvas, ghost):
+    pw, ph = A4
+    bead_colors = [colors.HexColor(g["color"]) for g in GRADE_LEVELS]
+    canvas.saveState()
+
+    if ghost:
+        reader, w, h = ghost
+        draw_w = pw * 0.80
+        draw_h = draw_w * h / w
+        if draw_h > ph * 0.62:                 # keep tall pictures inside the page
+            draw_h = ph * 0.62
+            draw_w = draw_h * w / h
+        canvas.drawImage(reader, (pw - draw_w) / 2, (ph - draw_h) / 2 - 10,
+                         width=draw_w, height=draw_h, mask="auto")
+
+    outer, mid, inner = 14, 22, 30
+    canvas.setStrokeColor(NAVY)
+    canvas.setLineWidth(1.6)
+    canvas.roundRect(outer, outer, pw - 2 * outer, ph - 2 * outer, 12)
+    canvas.setLineWidth(0.8)
+    canvas.roundRect(inner, inner, pw - 2 * inner, ph - 2 * inner, 5)
+
+    # a string of coloured beads between the two lines
+    n = 0
+    x0, y0, x1, y1 = mid, mid, pw - mid, ph - mid
+    for (ax, ay, bx, by) in [(x0, y0, x1, y0), (x1, y0, x1, y1), (x1, y1, x0, y1), (x0, y1, x0, y0)]:
+        length = math.hypot(bx - ax, by - ay)
+        count = int(length // 12)
+        for i in range(1, count):
+            t = i / count
+            canvas.setFillColor(bead_colors[n % len(bead_colors)])
+            canvas.circle(ax + (bx - ax) * t, ay + (by - ay) * t, 3.4, stroke=0, fill=1)
+            n += 1
+
+    # a gold star in each corner
+    canvas.setLineWidth(1.4)
+    canvas.setStrokeColor(colors.HexColor("#f08c00"))
+    canvas.setFillColor(colors.HexColor("#ffd43b"))
+    for cx, cy in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]:
+        canvas.drawPath(_star_path(canvas, cx, cy, 11), stroke=1, fill=1)
+
+    canvas.restoreState()
 
 
-def _safe_name(text):
-    return re.sub(r"[^A-Za-z0-9_.-]+", "_", text).strip("_") or "report"
+# ── building blocks of the card (S = writing-size factor) ────────────────────
+
+def _grade_table(heading, items, grades, width, S):
+    """Heading row + one row per item; the grade cell is filled with the grade colour."""
+    data = [[heading, "GRADE"]]
+    for key, label in items:
+        data.append([label, grades.get(key) or "-"])
+
+    row_h = ROW_H * S
+    table = Table(data, colWidths=[width * 0.60, width * 0.40], rowHeights=[row_h] * len(data))
+    cmds = [
+        ("BACKGROUND",    (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR",     (0, 0), (-1, 0), WHITE),
+        ("FONTNAME",      (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE",      (0, 0), (-1, 0), 9 * S),
+        ("ALIGN",         (1, 0), (1, -1), "CENTER"),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("FONTNAME",      (0, 1), (0, -1), "Helvetica"),
+        ("FONTSIZE",      (0, 1), (0, -1), 10 * S),
+        ("TEXTCOLOR",     (0, 1), (0, -1), NAVY),
+        ("LINEBELOW",     (0, 1), (0, -1), 0.6, LINE),
+        ("FONTNAME",      (1, 1), (1, -1), "Helvetica-Bold"),
+        ("FONTSIZE",      (1, 1), (1, -1), 9.5 * S),
+        ("LINEBELOW",     (1, 1), (1, -1), 3, WHITE),     # white gaps between colour bars
+        ("TOPPADDING",    (0, 0), (-1, -1), 2),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ("LEFTPADDING",   (0, 0), (0, -1), 8),
+    ]
+    for i, (key, _label) in enumerate(items, start=1):
+        level = GRADE_MAP.get(grades.get(key))
+        if level:
+            cmds.append(("BACKGROUND", (1, i), (1, i), colors.HexColor(level["color"])))
+            cmds.append(("TEXTCOLOR",  (1, i), (1, i), colors.HexColor(level["text"])))
+        else:
+            cmds.append(("TEXTCOLOR",  (1, i), (1, i), colors.grey))
+    table.setStyle(TableStyle(cmds))
+    return table
 
 
-# ── routes ─────────────────────────────────────────────────────────────────
-
-@nursery_bp.route("/nursery")
-@login_required
-def nursery_home():
-    class_name  = _pick(request.args.get("class_name"), NURSERY_CLASSES, None)
-    term        = _pick(request.args.get("term"), TERMS, None)
-    report_type = _pick(request.args.get("report_type"), REPORT_TYPES, None)
-
-    query = _visible_query()
-    if class_name:
-        query = query.filter_by(class_name=class_name)
-    if term:
-        query = query.filter_by(term=term)
-    if report_type:
-        query = query.filter_by(report_type=report_type)
-
-    reports = query.order_by(NurseryReport.class_name, NurseryReport.full_name).all()
-    return render_template("nursery_list.html", reports=reports,
-                           classes=NURSERY_CLASSES, terms=TERMS, report_types=REPORT_TYPES,
-                           selected_class=class_name, selected_term=term,
-                           selected_type=report_type)
+def _grade_section(heading, items, grades, width, art_path, S):
+    """A grade table with a cartoon beside it (full width if the picture is missing)."""
+    if not art_path:
+        return _grade_table(heading, items, grades, width, S)
+    table_w = width - ART_W - 8
+    table = _grade_table(heading, items, grades, table_w, S)
+    art = _fit_image(art_path, ART_W - 6, ROW_H * S * (len(items) + 1))
+    outer = Table([[table, art]], colWidths=[table_w + 8, ART_W])
+    outer.setStyle(TableStyle([
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 0),
+        ("TOPPADDING",    (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    return outer
 
 
-@nursery_bp.route("/nursery/new", methods=["GET", "POST"])
-@login_required
-def new_report():
-    if request.method == "POST":
-        form   = _read_form()
-        errors = _validate(form)
+def _header(width, img_dir, S):
+    name_style = _style("nm", fontName="Helvetica-Bold", fontSize=15 * S, leading=18 * S,
+                        textColor=NAVY, alignment=1)
+    addr_style = _style("ad", fontName="Helvetica", fontSize=8.5 * S, leading=10.5 * S,
+                        textColor=BLUE, alignment=1)
 
-        if not errors:
-            duplicate = _find_duplicate(form)
-            if duplicate:
-                flash(f"A {form['report_type']} report for {duplicate.full_name} already "
-                      f"exists for {form['term']}. You can edit it here.", "warning")
-                return redirect(url_for("nursery.edit_report", report_id=duplicate.id))
+    logo = _asset(img_dir, "nursery", "crest.png") or _asset(img_dir, "logo.png")
+    cartoon = _asset(img_dir, "nursery", "header_cartoon.png")
 
-        if errors:
-            for message in errors:
-                flash(message, "danger")
-            return _render_form(form)
+    cells, widths = [], []
+    if logo:
+        iw, ih = ImageReader(logo).getSize()
+        logo_h = 2.3 * cm
+        cells.append(Image(logo, width=logo_h * iw / ih, height=logo_h))
+        widths.append(logo_h * iw / ih + 8)
+    art_w = 100 if cartoon else 0
+    text_w = width - sum(widths) - art_w
 
-        report = NurseryReport(teacher_id=current_user.id)
-        _apply(report, form)
-        db.session.add(report)
-        db.session.commit()
-        flash(f"✔ Nursery report saved for {report.full_name}.", "success")
+    # the school name uses the writing size, but never more than one line wide
+    size = min(15 * S, (text_w - 6) / stringWidth(SCHOOL_NAME, "Helvetica-Bold", 1))
+    name_style.fontSize, name_style.leading = size, size * 1.2
+    cells.append([Paragraph(escape(SCHOOL_NAME), name_style), Spacer(1, 3),
+                  Paragraph(escape(SCHOOL_ADDRESS), addr_style),
+                  Paragraph(escape(SCHOOL_CONTACT), addr_style)])
+    widths.append(text_w)
+    if cartoon:
+        cells.append(_fit_image(cartoon, art_w, 66))
+        widths.append(art_w)
 
-        if request.form.get("after") == "list":
-            return redirect(url_for("nursery.nursery_home",
-                                    class_name=report.class_name, term=report.term))
-        # Save & add another: keep class, term and the details shared by the whole class
-        return redirect(url_for("nursery.new_report",
-                                class_name=report.class_name, term=report.term,
-                                report_type=report.report_type, planner=report.class_planner))
-
-    return _render_form(_blank_form())
-
-
-@nursery_bp.route("/nursery/<int:report_id>/edit", methods=["GET", "POST"])
-@login_required
-def edit_report(report_id):
-    report = _get_report(report_id)
-
-    if request.method == "POST":
-        form   = _read_form()
-        errors = _validate(form)
-        if not errors and _find_duplicate(form, exclude_id=report.id):
-            errors.append("Another report for this learner already exists for that class, "
-                          "term and report type.")
-        if errors:
-            for message in errors:
-                flash(message, "danger")
-            return _render_form(form, report)
-
-        _apply(report, form)
-        db.session.commit()
-        flash(f"✔ Report updated for {report.full_name}.", "success")
-        return redirect(url_for("nursery.nursery_home",
-                                class_name=report.class_name, term=report.term))
-
-    return _render_form(_form_from_report(report), report)
+    header = Table([cells], colWidths=widths)
+    header.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LINEBELOW", (0, 0), (-1, 0), 2, GOLD),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    return header
 
 
-@nursery_bp.route("/nursery/<int:report_id>/delete", methods=["POST"])
-@login_required
-def delete_report(report_id):
-    report = _get_report(report_id)
-    class_name, term, name = report.class_name, report.term, report.full_name
-    db.session.delete(report)
-    db.session.commit()
-    flash(f"Report deleted for {name}.", "info")
-    return redirect(url_for("nursery.nursery_home", class_name=class_name, term=term))
+def _card(report, width, img_dir, S):
+    label = _style("lbl", fontName="Helvetica-Bold", fontSize=9 * S, leading=11 * S, textColor=NAVY)
+    value = _style("val", fontName="Helvetica", fontSize=10.5 * S, leading=13 * S, textColor=colors.black)
+    remark = _style("rem", fontName="Helvetica-Oblique", fontSize=11 * S, leading=15 * S, textColor=NAVY)
+    title_style = _style("tt", fontName="Helvetica-Bold", fontSize=13 * S, leading=16 * S,
+                         textColor=NAVY, alignment=1)
+    foot_style = _style("ft", fontName="Helvetica-Bold", fontSize=8 * S, leading=10 * S,
+                        textColor=BLUE, alignment=1)
+
+    story = [_header(width, img_dir, S), Spacer(1, 8)]
+    story += [Paragraph(f"<u>{escape(report_title(report.report_type))}</u>", title_style),
+              Spacer(1, 8)]
+
+    # ---- Learner details ----
+    info = Table([
+        [Paragraph("NAME:", label),          Paragraph(f"<b>{escape(report.full_name)}</b>", value),
+         Paragraph("CLASS:", label),         Paragraph(escape(report.class_name), value)],
+        [Paragraph("CLASS PLANNER:", label), Paragraph(escape(report.class_planner or "-"), value),
+         Paragraph("TERM:", label),          Paragraph(f"{escape(report.term)} - {report.year}", value)],
+    ], colWidths=[width * 0.22, width * 0.34, width * 0.13, width * 0.31])
+    info.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), PALE),
+        ("BOX",        (0, 0), (-1, -1), 0.8, LINE),
+        ("INNERGRID",  (0, 0), (-1, -1), 0.4, LINE),
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story += [info, Spacer(1, 8)]
+
+    grades = report.grades or {}
+    story += [_grade_section("SKILLS AND ABILITIES", SKILLS, grades, width,
+                             _asset(img_dir, "nursery", "skills_cartoon.png"), S), Spacer(1, 8)]
+    story += [_grade_section("PERSONALITY AND CHARACTER", TRAITS, grades, width,
+                             _asset(img_dir, "nursery", "character_cartoon.png"), S), Spacer(1, 8)]
+
+    # ---- Head teacher's remarks ----
+    remark_text = escape(report.head_remarks).replace("\n", "<br/>") if report.head_remarks \
+        else "&nbsp;<br/>&nbsp;"
+    remarks = Table([[Paragraph("HEAD TEACHER'S REMARKS:", label), Paragraph(remark_text, remark)]],
+                    colWidths=[width * 0.30, width * 0.70])
+    remarks.setStyle(TableStyle([
+        ("BOX",   (0, 0), (-1, -1), 0.8, LINE),
+        ("BACKGROUND", (0, 0), (0, 0), PALE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    story += [remarks, Spacer(1, 6)]
+
+    # ---- Next term and fees: the same on every card (set in nursery_config.py) ----
+    terms_tbl = Table([
+        [Paragraph("NEXT TERM BEGINS ON:", label), Paragraph(escape(NEXT_TERM_BEGINS), value)],
+        [Paragraph("FEES (DAY):", label),          Paragraph(escape(FEES_DAY), value)],
+        [Paragraph("FEES (BOARDERS):", label),     Paragraph(escape(FEES_BOARDERS), value)],
+    ], colWidths=[width * 0.31, width * 0.69])
+    terms_tbl.setStyle(TableStyle([
+        ("BOX",        (0, 0), (-1, -1), 0.8, LINE),
+        ("INNERGRID",  (0, 0), (-1, -1), 0.4, LINE),
+        ("BACKGROUND", (0, 0), (0, -1), PALE),
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    story += [terms_tbl, Spacer(1, 8)]
+
+    # ---- Grading system legend ----
+    cells = [g["name"].upper() for g in GRADE_LEVELS]
+    legend = Table([["GRADING SYSTEM"] + [""] * (len(cells) - 1), cells],
+                   colWidths=[width / len(cells)] * len(cells))
+    lcmds = [
+        ("SPAN",       (0, 0), (-1, 0)),
+        ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE",   (0, 0), (-1, 0), 8.5 * S),
+        ("TEXTCOLOR",  (0, 0), (-1, 0), NAVY),
+        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+        ("FONTNAME",   (0, 1), (-1, 1), "Helvetica-Bold"),
+        ("FONTSIZE",   (0, 1), (-1, 1), 7.5 * S),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LINEAFTER",  (0, 1), (-2, 1), 2, WHITE),
+    ]
+    for i, g in enumerate(GRADE_LEVELS):
+        lcmds.append(("BACKGROUND", (i, 1), (i, 1), colors.HexColor(g["color"])))
+        lcmds.append(("TEXTCOLOR",  (i, 1), (i, 1), colors.HexColor(g["text"])))
+    legend.setStyle(TableStyle(lcmds))
+    story += [legend, Spacer(1, 6)]
+
+    strip = _asset(img_dir, "nursery", "footer_strip.png")
+    if strip:
+        story += [_fit_image(strip, width * 0.80, 32), Spacer(1, 3)]
+    story.append(Paragraph("NOT VALID WITHOUT THE SCHOOL STAMP", foot_style))
+    return story
 
 
-@nursery_bp.route("/nursery/<int:report_id>/report")
-@login_required
-def report_card(report_id):
-    report = _get_report(report_id)
-    return render_template(
-        "nursery_report.html", report=report, title=report_title(report.report_type),
-        next_term_begins=NEXT_TERM_BEGINS, fees_day=FEES_DAY, fees_boarders=FEES_BOARDERS,
-        font_scale=SCREEN_FONT_SCALE, print_font_scale=PRINT_FONT_SCALE,
-        skills=SKILLS, traits=TRAITS, grades=GRADE_LEVELS, grade_map=GRADE_MAP,
-        school_name=SCHOOL_NAME, school_address=SCHOOL_ADDRESS, school_contact=SCHOOL_CONTACT,
-    )
+def _fit_card(report, width, height, img_dir):
+    """Biggest writing size (every size grows by the same factor) that keeps the card on one page."""
+    S = PDF_MAX_FONT_SCALE
+    while S >= 1.0:
+        story = _card(report, width, img_dir, S)
+        if _content_height(story, width) <= height:
+            return story
+        S = round(S - 0.02, 2)
+    return _card(report, width, img_dir, 1.0)     # KeepInFrame below is the last safety net
 
 
-@nursery_bp.route("/nursery/<int:report_id>/pdf")
-@login_required
-def download_pdf(report_id):
-    report = _get_report(report_id)
-    pdf = build_nursery_pdf([report], _img_dir())
-    return send_file(
-        io.BytesIO(pdf), mimetype="application/pdf", as_attachment=True,
-        download_name=f"NurseryReport_{_safe_name(report.full_name)}_"
-                      f"{_safe_name(report.class_name)}_{_safe_name(report.term)}.pdf")
+def build_nursery_pdf(reports, img_dir=None):
+    """Return PDF bytes with one nursery report card per A4 page.
+    img_dir is the project's static/img folder (for the crest and cartoons)."""
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            leftMargin=PAGE_MARGIN, rightMargin=PAGE_MARGIN,
+                            topMargin=PAGE_MARGIN, bottomMargin=PAGE_MARGIN)
+    width = A4[0] - 2 * PAGE_MARGIN
+    height = A4[1] - 2 * PAGE_MARGIN - 2     # small slack so a card is never "too large"
 
-
-@nursery_bp.route("/nursery/bulk-pdf", methods=["POST"])
-@login_required
-def bulk_pdf():
-    """Selected learners' report cards in one PDF, one card per page."""
-    ids = [int(i) for i in request.form.getlist("report_ids") if i.isdigit()]
-    if not ids:
-        flash("Please select at least one learner.", "warning")
-        return redirect(url_for("nursery.nursery_home"))
-
-    reports = (NurseryReport.query.filter(NurseryReport.id.in_(ids))
-               .order_by(NurseryReport.class_name, NurseryReport.full_name).all())
-    if not reports:
-        flash("No reports found for the selected learners.", "warning")
-        return redirect(url_for("nursery.nursery_home"))
-
-    pdf = build_nursery_pdf(reports, _img_dir())
-    return send_file(io.BytesIO(pdf), mimetype="application/pdf", as_attachment=True,
-                     download_name="NurseryReports.pdf")
-def bulk_pdf():
-    """Selected learners' report cards in one PDF, one card per page."""
-    if not current_user.can_view_reports:
-        abort(403)
-    ids = [int(i) for i in request.form.getlist("report_ids") if i.isdigit()]
-    if not ids:
-        flash("Please select at least one learner.", "warning")
-        return redirect(url_for("nursery.nursery_home"))
-
-    reports = (NurseryReport.query.filter(NurseryReport.id.in_(ids))
-               .order_by(NurseryReport.class_name, NurseryReport.full_name).all())
-    if not reports:
-        flash("No reports found for the selected learners.", "warning")
-        return redirect(url_for("nursery.nursery_home"))
-
-    pdf = build_nursery_pdf(reports, _img_dir())
-    return send_file(io.BytesIO(pdf), mimetype="application/pdf", as_attachment=True,
-                     download_name="NurseryReports.pdf")
+    story = []
+    for i, report in enumerate(reports):
+        if i:
+            story.append(PageBreak())
+        # "shrink" guarantees a card never spills onto a second page
+        story.append(KeepInFrame(width, height, _fit_card(report, width, height, img_dir),
+                                 mode="shrink", vAlign="TOP"))
+    decorate = _make_page_border(_load_ghost(img_dir))
+    doc.build(story, onFirstPage=decorate, onLaterPages=decorate)
+    buf.seek(0)
+    return buf.read()

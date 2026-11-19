@@ -290,7 +290,7 @@ def bulk_pdf():
 
     pdf = build_nursery_pdf(reports, _img_dir())
     return send_file(io.BytesIO(pdf), mimetype="application/pdf", as_attachment=True,
-                     download_name="NurseryReports.pdf")red
+                     download_name="NurseryReports.pdf")
 def bulk_pdf():
     """Selected learners' report cards in one PDF, one card per page."""
     if not current_user.can_view_reports:

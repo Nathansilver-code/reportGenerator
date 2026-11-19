@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                   flash, send_file, current_app)
+                   flash, send_file, current_app, abort)
 from flask_login import login_required, current_user
 
 from extensions import db
@@ -306,6 +306,6 @@ def bulk_pdf():
         flash("No reports found for the selected learners.", "warning")
         return redirect(url_for("nursery.nursery_home"))
 
-    pdf = build_nursery_pdf(reports, _logo_path())
+    pdf = build_nursery_pdf(reports, _img_dir())
     return send_file(io.BytesIO(pdf), mimetype="application/pdf", as_attachment=True,
                      download_name="NurseryReports.pdf")

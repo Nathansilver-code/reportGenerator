@@ -12,6 +12,7 @@ import math
 import os
 from xml.sax.saxutils import escape
 
+from PIL import Image as PILImage, ImageDraw, ImageFilter, ImageOps
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -25,7 +26,7 @@ from reportlab.platypus import (
 
 from utils.nursery_config import (
     SCHOOL_NAME, SCHOOL_ADDRESS, SCHOOL_CONTACT,
-    NEXT_TERM_BEGINS, FEES_DAY, FEES_BOARDERS, PDF_MAX_FONT_SCALE,
+    NEXT_TERM_BEGINS, FEES_DAY, FEES_BOARDERS, PDF_MAX_FONT_SCALE, BACKGROUND_STRENGTH,
     SKILLS, TRAITS, GRADE_LEVELS, GRADE_MAP, report_title,
 )
 
@@ -78,12 +79,61 @@ def _content_height(flowables, width):
     return sum(fl.wrap(width, 10000)[1] for fl in flowables)
 
 
+# ── the faint picture behind the card (optional) ─────────────────────────────
+
+BACKGROUND_NAMES = ("background.png", "background.jpg", "background.jpeg", "background.webp")
+
+
+def _load_ghost(img_dir):
+    """The optional background picture, faded and with soft edges (made once, in memory).
+    Returns (ImageReader, width, height) or None when there is no picture."""
+    for name in BACKGROUND_NAMES:
+        path = _asset(img_dir, "nursery", name)
+        if not path:
+            continue
+        try:
+            im = ImageOps.exif_transpose(PILImage.open(path)).convert("RGB")
+            im.thumbnail((900, 900))
+            w, h = im.size
+            mask = PILImage.new("L", (w, h), 0)
+            ImageDraw.Draw(mask).rounded_rectangle(
+                (w * 0.06, h * 0.06, w * 0.94, h * 0.94), radius=min(w, h) * 0.18, fill=255)
+            mask = mask.filter(ImageFilter.GaussianBlur(min(w, h) * 0.07))
+            mask = mask.point(lambda v: int(v * BACKGROUND_STRENGTH))
+            ghost = im.convert("RGBA")
+            ghost.putalpha(mask)
+            buf = io.BytesIO()
+            ghost.save(buf, "PNG")
+            buf.seek(0)
+            return ImageReader(buf), w, h
+        except Exception:          # an unreadable picture must never break the report
+            return None
+    return None
+
+
 # ── the page border ─────────────────────────────────────────────────────────
 
-def _page_border(canvas, doc):
+def _make_page_border(ghost):
+    """Page decorator: the faint picture (if any), then the bead border."""
+    def decorate(canvas, doc):
+        _draw_page_border(canvas, ghost)
+    return decorate
+
+
+def _draw_page_border(canvas, ghost):
     pw, ph = A4
     bead_colors = [colors.HexColor(g["color"]) for g in GRADE_LEVELS]
     canvas.saveState()
+
+    if ghost:
+        reader, w, h = ghost
+        draw_w = pw * 0.80
+        draw_h = draw_w * h / w
+        if draw_h > ph * 0.62:                 # keep tall pictures inside the page
+            draw_h = ph * 0.62
+            draw_w = draw_h * w / h
+        canvas.drawImage(reader, (pw - draw_w) / 2, (ph - draw_h) / 2 - 10,
+                         width=draw_w, height=draw_h, mask="auto")
 
     outer, mid, inner = 14, 22, 30
     canvas.setStrokeColor(NAVY)
@@ -339,6 +389,7 @@ def build_nursery_pdf(reports, img_dir=None):
         # "shrink" guarantees a card never spills onto a second page
         story.append(KeepInFrame(width, height, _fit_card(report, width, height, img_dir),
                                  mode="shrink", vAlign="TOP"))
-    doc.build(story, onFirstPage=_page_border, onLaterPages=_page_border)
+    decorate = _make_page_border(_load_ghost(img_dir))
+    doc.build(story, onFirstPage=decorate, onLaterPages=decorate)
     buf.seek(0)
     return buf.read()

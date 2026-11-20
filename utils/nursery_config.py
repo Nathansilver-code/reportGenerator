@@ -10,9 +10,23 @@ SCHOOL_CONTACT = "P.O Box 153490, Kampala   |   Tel: 0702-619008 / 0787-908562"
 
 NURSERY_CLASSES = ["ECD ONE", "ECD TWO", "ECD THREE"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
+
 REPORT_TYPES    = ["End of Term", "Mid Term"]
 
-DEFAULT_FEES_DAY = "Refer to requirement sheet"
+# Printed on EVERY nursery card (not typed in per learner).
+# Change these here when they change - for example the date every new term.
+NEXT_TERM_BEGINS = "14th September 2026"
+FEES_DAY         = "Refer to requirement sheet"
+FEES_BOARDERS    = "650,000/="
+
+# Writing size. 1.0 = the first design; every size on the card grows by the same factor.
+PDF_MAX_FONT_SCALE = 1.35     # the PDF uses the biggest size (up to this) that still fits one page
+SCREEN_FONT_SCALE  = 1.25     # card shown on the screen
+PRINT_FONT_SCALE   = 1.2      # browser Print button (one A4 page)
+
+# Optional picture faintly behind the card: save it as static/img/nursery/background.jpg
+# (or .png / .jpeg / .webp). No file = no background. Higher number = stronger picture.
+BACKGROUND_STRENGTH = 0.12
 
 # Best to weakest, in the order shown on the card's grading bar
 GRADE_LEVELS = [

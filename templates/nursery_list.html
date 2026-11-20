@@ -57,7 +57,7 @@
         {{ reports|length }} Learner{{ 's' if reports|length != 1 else '' }}
       </h2>
 
-      {% if current_user.can_view_reports %}
+      
       <!-- The checkboxes in the table belong to this form through form="bulk-form" -->
       <form id="bulk-form" method="POST" action="{{ url_for('nursery.bulk_pdf') }}"
             style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; margin:0;">
@@ -65,14 +65,14 @@
         <button type="submit" class="btn btn-primary btn-sm">⬇ Download Selected (one PDF)</button>
         <span id="selected-count" class="text-muted">0 selected</span>
       </form>
-      {% endif %}
+      
     </div>
 
     <div class="table-wrapper">
       <table>
         <thead>
           <tr>
-            {% if current_user.can_view_reports %}<th>☑</th>{% endif %}
+            <th>☑</th>
             <th>#</th>
             <th>Full Name</th>
             <th>Class</th>
@@ -85,12 +85,12 @@
         <tbody>
           {% for r in reports %}
           <tr>
-            {% if current_user.can_view_reports %}
+            
             <td>
               <input type="checkbox" name="report_ids" value="{{ r.id }}" form="bulk-form"
                      class="report-checkbox" onchange="updateCount()" />
             </td>
-            {% endif %}
+            
             <td>{{ loop.index }}</td>
             <td style="font-weight:600;">{{ r.full_name }}</td>
             <td>{{ r.class_name }}</td>
@@ -99,10 +99,10 @@
             <td>{{ r.class_planner }}</td>
             <td>
               <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-                {% if current_user.can_view_reports %}
+                
                 <a href="{{ url_for('nursery.report_card', report_id=r.id) }}" class="btn btn-outline btn-sm">📄 Report</a>
                 <a href="{{ url_for('nursery.download_pdf', report_id=r.id) }}" class="btn btn-outline btn-sm">⬇ PDF</a>
-                {% endif %}
+                
                 <a href="{{ url_for('nursery.edit_report', report_id=r.id) }}" class="btn btn-outline btn-sm">✏ Edit</a>
                 <form method="POST" action="{{ url_for('nursery.delete_report', report_id=r.id) }}"
                       onsubmit="return confirm('Delete the nursery report for {{ r.full_name|e }}? This cannot be undone.');"

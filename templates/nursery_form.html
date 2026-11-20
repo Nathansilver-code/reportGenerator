@@ -138,30 +138,24 @@
         </div>
         {% endfor %}
 
-        <h3 class="section-title">Remarks, next term and fees</h3>
+        <h3 class="section-title">Head teacher's remarks</h3>
 
         <div class="form-group">
-          <label class="form-label" for="head_remarks">Head teacher's remarks</label>
+          <label class="form-label" for="head_remarks">Remarks</label>
           <textarea id="head_remarks" name="head_remarks" class="form-control" rows="3"
                     maxlength="1000" placeholder="e.g. A good report">{{ form.head_remarks }}</textarea>
         </div>
 
-        <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label" for="next_term_begins">Next term begins on</label>
-            <input type="text" id="next_term_begins" name="next_term_begins" class="form-control"
-                   value="{{ form.next_term_begins }}" maxlength="60" placeholder="e.g. 14th September 2026" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="fees_day">Fees (day)</label>
-            <input type="text" id="fees_day" name="fees_day" class="form-control"
-                   value="{{ form.fees_day }}" maxlength="120" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="fees_boarders">Fees (boarders)</label>
-            <input type="text" id="fees_boarders" name="fees_boarders" class="form-control"
-                   value="{{ form.fees_boarders }}" maxlength="60" placeholder="e.g. 650,000/=" />
-          </div>
+        <!-- Fixed for every card: shown here for information, not typed in -->
+        <div style="background:var(--pale); border:1px solid var(--border); border-radius:var(--radius); padding:0.8rem 1rem; margin-top:0.5rem;">
+          <p style="font-weight:700; color:var(--primary); font-size:0.85rem; margin-bottom:0.4rem;">
+            Printed automatically on every card
+          </p>
+          <p class="text-muted" style="line-height:1.8;">
+            Next term begins on: <strong style="color:var(--text);">{{ next_term_begins }}</strong><br />
+            Fees (day): <strong style="color:var(--text);">{{ fees_day }}</strong><br />
+            Fees (boarders): <strong style="color:var(--text);">{{ fees_boarders }}</strong>
+          </p>
         </div>
 
         <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1.25rem;">

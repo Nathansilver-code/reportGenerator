@@ -9,6 +9,12 @@
     border: 2px solid var(--primary); border-radius: 14px;
     padding: 34px 38px; box-shadow: 0 4px 20px rgba(13,43,110,0.15);
   }
+  .nc-sheet::before {                      /* optional faint picture behind the card */
+    content: ""; position: absolute; inset: 44px 34px; pointer-events: none;
+    background: var(--nc-bg, none) center / contain no-repeat; opacity: {{ background_strength }};
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 42%, transparent 74%);
+            mask-image: radial-gradient(ellipse at center, #000 42%, transparent 74%);
+  }
   .nc-sheet::after {                       /* thin inner line */
     content: ""; position: absolute; inset: 14px; border: 1.5px solid var(--primary);
     border-radius: 5px; pointer-events: none;
@@ -140,7 +146,7 @@
   </div>
 
   {% set art = 'img/nursery/' %}
-  <div class="nc-sheet" style="--k: {{ font_scale }};">
+  <div class="nc-sheet" style="--k: {{ font_scale }};{% if background %} --nc-bg: url('{{ url_for('static', filename=background) }}');{% endif %}">
 
     <!-- coloured bead border + corner stars -->
     <i class="nc-bead h top"></i><i class="nc-bead h bottom"></i>

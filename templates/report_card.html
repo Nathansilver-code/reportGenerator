@@ -12,6 +12,7 @@
   }
 
   .report-card {
+    --k: 1.3;
     max-width: 780px;
     margin: 0 auto;
     background: #fff;
@@ -29,13 +30,13 @@
   }
   .rc-banner h1 {
     font-family: 'Merriweather', serif;
-    font-size: 1.2rem;
+    font-size: calc(1.2rem * var(--k));
     margin: 0 0 0.2rem;
     color: var(--rc-accent);
     text-transform: uppercase;
     letter-spacing: 1px;
   }
-  .rc-banner p { opacity: 0.9; font-size: 0.85rem; margin: 0; }
+  .rc-banner p { opacity: 0.9; font-size: calc(0.85rem * var(--k)); margin: 0; }
 
   .rc-stripe {
     height: 7px;
@@ -50,7 +51,7 @@
   .rc-section { margin-bottom: 0.85rem; }
 
   .rc-section-title {
-    font-size: 0.72rem;
+    font-size: calc(0.72rem * var(--k));
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -70,17 +71,19 @@
     border-radius: 4px;
     padding: 0.3rem 0.6rem;
   }
-  .info-cell label { font-size: 0.68rem; color: var(--rc-mid); display: block; margin-bottom: 0.05rem; }
-  .info-cell span  { font-weight: 700; font-size: 0.85rem; color: var(--rc-dark); }
+  .info-cell label { font-size: calc(0.68rem * var(--k)); color: var(--rc-mid); display: block; margin-bottom: 0.05rem; }
+  .info-cell span  { font-weight: 700; font-size: calc(0.85rem * var(--k)); color: var(--rc-dark); }
 
-  .rc-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-  .rc-table th {
+  .rc-table { width: 100%; border-collapse: collapse; font-size: calc(0.82rem * var(--k)); }
+    .rc-table th {
+    font-size: calc(0.78rem * var(--k));
     background: var(--rc-mid);
     color: #fff;
     padding: 0.4rem 0.75rem;
     text-align: left;
   }
-  .rc-table td { padding: 0.4rem 0.75rem; border-bottom: 1px solid #dbeafe; }
+    .rc-table td { padding: 0.4rem 0.75rem; border-bottom: 1px solid #dbeafe; font-size: calc(0.86rem * var(--k)); }
+  .rc-table .badge { font-size: calc(0.78rem * var(--k)); }
   .rc-table tr:last-child td { border-bottom: none; }
   .rc-table tr:nth-child(even) { background: var(--rc-pale); }
 
@@ -95,8 +98,8 @@
     text-align: center;
     align-items: center;
   }
-  .rc-summary .val { font-size: 1.2rem; font-weight: 700; color: var(--rc-accent); }
-  .rc-summary .lbl { font-size: 0.7rem; opacity: 0.85; }
+  .rc-summary .val { font-size: calc(1.2rem * var(--k)); font-weight: 700; color: var(--rc-accent); }
+  .rc-summary .lbl { font-size: calc(0.7rem * var(--k)); opacity: 0.85; }
 
   /* Division stamp — navy-and-gold academic seal, replaces a flat stat box */
   .division-stamp {
@@ -110,14 +113,14 @@
     border: 3px double var(--rc-accent);
     color: var(--rc-accent);
     font-weight: 700;
-    font-size: 1.5rem;
+    font-size: calc(1.5rem * var(--k));
     transform: rotate(-6deg);
     background: rgba(201,162,39,0.08);
     line-height: 1;
     margin: 0 auto;
   }
   .division-stamp .stamp-label {
-    font-size: 0.48rem;
+    font-size: calc(0.48rem * var(--k));
     letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-top: 0.2rem;
@@ -130,7 +133,7 @@
     border-left: 4px solid var(--rc-light);
     border-radius: 0 var(--radius) var(--radius) 0;
     padding: 0.6rem 1rem;
-    font-size: 0.82rem;
+    font-size: calc(0.82rem * var(--k));
     line-height: 1.55;
     color: var(--rc-dark);
   }
@@ -144,13 +147,13 @@
   .sig-line {
     border-top: 1px solid var(--rc-mid);
     padding-top: 0.3rem;
-    font-size: 0.72rem;
+    font-size: calc(0.72rem * var(--k));
     color: var(--rc-mid);
     text-align: center;
   }
 
   @media print {
-    .no-print     { display: none !important; }
+    .report-card  { --k: 1.2; }
     .report-card  { border-color: #000; box-shadow: none; max-width: 100%; }
     .rc-banner    { background: var(--rc-dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .rc-stripe    { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

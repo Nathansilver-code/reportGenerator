@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from models import Student, Mark, LOWER_PRIMARY_CLASSES
 from extensions import db
 from utils.grading import compute_student_results
+from xml.sax.saxutils import escape
 
 import io
 import zipfile
@@ -26,6 +27,9 @@ PRIMARY_CLASSES = ["P1", "P2", "P3", "P4", "P5", "P6", "P7"]
 TERMS           = ["Term 1", "Term 2", "Term 3"]
 EXAM_TYPES         = ["Mid Term", "Pre-End", "End of Term", "Combined"]
 MARKSHEET_EXAM_TYPES = ["Mid Term", "Pre-End", "End of Term", "Mock"]
+# Writing size on the primary report cards. 1.0 = the old size; every size grows by the same factor.
+REPORT_FONT_SCALE = 1.3
+
 def _get_student_mark(student, exam_type):
     for mark in student.marks:
         if mark.exam_type == exam_type:
@@ -80,6 +84,7 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     if not mark:
         return None
 
+    S            = REPORT_FONT_SCALE          # every writing size below is multiplied by this
     computed     = compute_student_results(mark)
     student_year = getattr(student, 'year', None) or datetime.utcnow().year
     teacher      = student.teacher
@@ -98,23 +103,28 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     WHITE  = colors.white
 
     title_style = ParagraphStyle("title",
-        fontName="Helvetica-Bold", fontSize=16,
+        fontName="Helvetica-Bold", fontSize=16*S, leading=19*S,
         textColor=WHITE, alignment=1, spaceAfter=3)
     sub_style = ParagraphStyle("sub",
-        fontName="Helvetica", fontSize=10,
+        fontName="Helvetica", fontSize=10*S, leading=12*S,
         textColor=WHITE, alignment=1, spaceAfter=4)
     section_style = ParagraphStyle("section",
-        fontName="Helvetica-Bold", fontSize=9,
+        fontName="Helvetica-Bold", fontSize=9*S, leading=11*S,
         textColor=BLUE, spaceBefore=8, spaceAfter=5)
     comment_style = ParagraphStyle("comment",
-        fontName="Helvetica", fontSize=9,
-        textColor=NAVY, leading=14, spaceBefore=4, spaceAfter=4)
+        fontName="Helvetica", fontSize=9*S, leading=14*S,
+        textColor=NAVY, spaceBefore=4, spaceAfter=4)
+    label_style = ParagraphStyle("label",
+        fontName="Helvetica-Bold", fontSize=9*S, leading=11*S)
+    value_style = ParagraphStyle("value",
+        fontName="Helvetica", fontSize=9*S, leading=11*S)
+    stat_style = ParagraphStyle("stat", alignment=1, autoLeading="max")
 
     story = []
 
     banner = Table([
         [Paragraph("MARANATHA SCHOOLS", title_style)],
-        [Paragraph(f"Student Report Card  |  {exam_type}  |  {student.term}  |  {student_year}", sub_style)],
+        [Paragraph(f"Student Report Card  |  {escape(exam_type)}  |  {escape(student.term)}  |  {student_year}", sub_style)],
     ], colWidths=[PAGE_W])
     banner.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,-1), NAVY),
@@ -127,20 +137,20 @@ def _build_report_pdf(student, exam_type="Mid Term"):
 
     story.append(Paragraph("STUDENT INFORMATION", section_style))
     info_data = [
-        ["Full Name",     student.full_name,  "Class",         student.class_name],
-        ["Term",          student.term,        "Academic Year", str(student_year)],
-        ["Class Teacher", teacher.full_name,   "Exam Type",     exam_type],
+        [Paragraph("Full Name", label_style),     Paragraph(escape(student.full_name), value_style),
+         Paragraph("Class", label_style),         Paragraph(escape(student.class_name), value_style)],
+        [Paragraph("Term", label_style),          Paragraph(escape(student.term), value_style),
+         Paragraph("Academic Year", label_style), Paragraph(str(student_year), value_style)],
+        [Paragraph("Class Teacher", label_style), Paragraph(escape(teacher.full_name), value_style),
+         Paragraph("Exam Type", label_style),     Paragraph(escape(exam_type), value_style)],
     ]
-    info_table = Table(info_data, colWidths=[3.5*cm, 5.5*cm, 3.5*cm, 5.5*cm])
+    info_table = Table(info_data, colWidths=[3.8*cm, 5.2*cm, 3.8*cm, 5.2*cm])
     info_table.setStyle(TableStyle([
-        ("FONTNAME",      (0,0), (-1,-1), "Helvetica"),
-        ("FONTNAME",      (0,0), (0,-1),  "Helvetica-Bold"),
-        ("FONTNAME",      (2,0), (2,-1),  "Helvetica-Bold"),
-        ("FONTSIZE",      (0,0), (-1,-1), 9),
         ("BACKGROUND",    (0,0), (-1,-1), PALE),
         ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
-        ("TOPPADDING",    (0,0), (-1,-1), 5),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("TOPPADDING",    (0,0), (-1,-1), 5*S),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5*S),
         ("LEFTPADDING",   (0,0), (-1,-1), 6),
     ]))
     story.append(info_table)
@@ -162,27 +172,25 @@ def _build_report_pdf(student, exam_type="Mid Term"):
         ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
         ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
         ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
-        ("FONTSIZE",      (0,0), (-1,-1), 9),
+        ("FONTSIZE",      (0,0), (-1,-1), 9*S),
         ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
         ("ROWBACKGROUNDS",(0,1), (-1,-1), [WHITE, PALE]),
         ("ALIGN",         (1,0), (3,-1),  "CENTER"),
-        ("TOPPADDING",    (0,0), (-1,-1), 5),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("TOPPADDING",    (0,0), (-1,-1), 5*S),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5*S),
         ("LEFTPADDING",   (0,0), (-1,-1), 6),
     ]))
     story.append(subj_table)
     story.append(Spacer(1, 0.3*cm))
 
     summary_data = [[
-        Paragraph(f"<b><font color='#93c5fd' size=16>{computed['total']}</font></b><br/>"
-                  f"<font color='white' size=8>Total / {computed['max_total']}</font>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=16>{computed['aggregate_sum']}</font></b><br/>"
-                  f"<font color='white' size=8>Aggregate Sum</font>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=16>{computed['division']}</font></b><br/>"
-                  f"<font color='white' size=8>Division</font>",
-                  ParagraphStyle("s", alignment=1)),
+        Paragraph(f"<b><font color='#93c5fd' size='{16*S:.1f}'>{computed['total']}</font></b><br/>"
+                  f"<font color='white' size='{8*S:.1f}'>Total / {computed['max_total']}</font>", stat_style),
+        Paragraph(f"<b><font color='#93c5fd' size='{16*S:.1f}'>{computed['aggregate_sum']}</font></b><br/>"
+                  f"<font color='white' size='{8*S:.1f}'>Aggregate Sum</font>", stat_style),
+        Paragraph(f"<b><font color='#93c5fd' size='{16*S:.1f}'>{computed['division']}</font></b><br/>"
+                  f"<font color='white' size='{8*S:.1f}'>Division</font>", stat_style),
     ]]
     summary_table = Table(summary_data, colWidths=[6*cm, 6*cm, 6*cm])
     summary_table.setStyle(TableStyle([
@@ -195,7 +203,7 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     story.append(Spacer(1, 0.3*cm))
 
     story.append(Paragraph("CLASS TEACHER'S COMMENT", section_style))
-    story.append(Paragraph(computed["comment"], comment_style))
+    story.append(Paragraph(escape(computed["comment"]), comment_style))
     story.append(Spacer(1, 0.5*cm))
 
     sig_table = Table(
@@ -203,7 +211,7 @@ def _build_report_pdf(student, exam_type="Mid Term"):
         colWidths=[9*cm, 9*cm])
     sig_table.setStyle(TableStyle([
         ("FONTNAME",    (0,0), (-1,-1), "Helvetica"),
-        ("FONTSIZE",    (0,0), (-1,-1), 8),
+        ("FONTSIZE",    (0,0), (-1,-1), 8*S),
         ("TEXTCOLOR",   (0,0), (-1,-1), BLUE),
         ("LINEABOVE",   (0,0), (-1,-1), 0.5, BLUE),
         ("ALIGN",       (0,0), (-1,-1), "CENTER"),
@@ -215,7 +223,6 @@ def _build_report_pdf(student, exam_type="Mid Term"):
     buf.seek(0)
     return buf.read()
 
-
 def _build_combined_report_pdf(student):
     preend_mark = _get_student_mark(student, "Pre-End")
     end_mark    = _get_student_mark(student, "End of Term")
@@ -223,6 +230,7 @@ def _build_combined_report_pdf(student):
     if not preend_mark and not end_mark:
         return None
 
+    S               = REPORT_FONT_SCALE       # every writing size below is multiplied by this
     preend_computed = compute_student_results(preend_mark) if preend_mark else None
     end_computed    = compute_student_results(end_mark) if end_mark else None
 
@@ -249,23 +257,28 @@ def _build_combined_report_pdf(student):
     WHITE  = colors.white
 
     title_style = ParagraphStyle("title",
-        fontName="Helvetica-Bold", fontSize=16,
+        fontName="Helvetica-Bold", fontSize=16*S, leading=19*S,
         textColor=WHITE, alignment=1, spaceAfter=3)
     sub_style = ParagraphStyle("sub",
-        fontName="Helvetica", fontSize=10,
+        fontName="Helvetica", fontSize=10*S, leading=12*S,
         textColor=WHITE, alignment=1, spaceAfter=4)
     section_style = ParagraphStyle("section",
-        fontName="Helvetica-Bold", fontSize=9,
+        fontName="Helvetica-Bold", fontSize=9*S, leading=11*S,
         textColor=BLUE, spaceBefore=8, spaceAfter=5)
     comment_style = ParagraphStyle("comment",
-        fontName="Helvetica", fontSize=9,
-        textColor=NAVY, leading=14, spaceBefore=4, spaceAfter=4)
+        fontName="Helvetica", fontSize=9*S, leading=14*S,
+        textColor=NAVY, spaceBefore=4, spaceAfter=4)
+    label_style = ParagraphStyle("label",
+        fontName="Helvetica-Bold", fontSize=9*S, leading=11*S)
+    value_style = ParagraphStyle("value",
+        fontName="Helvetica", fontSize=9*S, leading=11*S)
+    stat_style = ParagraphStyle("stat", alignment=1, autoLeading="max")
 
     story = []
 
     banner = Table([
         [Paragraph("MARANATHA SCHOOLS", title_style)],
-        [Paragraph(f"Combined Report Card  |  {student.term}  |  {student_year}", sub_style)],
+        [Paragraph(f"Combined Report Card  |  {escape(student.term)}  |  {student_year}", sub_style)],
     ], colWidths=[PAGE_W])
     banner.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,-1), NAVY),
@@ -278,20 +291,20 @@ def _build_combined_report_pdf(student):
 
     story.append(Paragraph("STUDENT INFORMATION", section_style))
     info_data = [
-        ["Full Name",     student.full_name,  "Class",         student.class_name],
-        ["Term",          student.term,        "Academic Year", str(student_year)],
-        ["Class Teacher", teacher.full_name,   "Report Type",   "Combined"],
+        [Paragraph("Full Name", label_style),     Paragraph(escape(student.full_name), value_style),
+         Paragraph("Class", label_style),         Paragraph(escape(student.class_name), value_style)],
+        [Paragraph("Term", label_style),          Paragraph(escape(student.term), value_style),
+         Paragraph("Academic Year", label_style), Paragraph(str(student_year), value_style)],
+        [Paragraph("Class Teacher", label_style), Paragraph(escape(teacher.full_name), value_style),
+         Paragraph("Report Type", label_style),   Paragraph("Combined", value_style)],
     ]
-    info_table = Table(info_data, colWidths=[3.5*cm, 5.5*cm, 3.5*cm, 5.5*cm])
+    info_table = Table(info_data, colWidths=[3.8*cm, 5.2*cm, 3.8*cm, 5.2*cm])
     info_table.setStyle(TableStyle([
-        ("FONTNAME",      (0,0), (-1,-1), "Helvetica"),
-        ("FONTNAME",      (0,0), (0,-1),  "Helvetica-Bold"),
-        ("FONTNAME",      (2,0), (2,-1),  "Helvetica-Bold"),
-        ("FONTSIZE",      (0,0), (-1,-1), 9),
         ("BACKGROUND",    (0,0), (-1,-1), PALE),
         ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
-        ("TOPPADDING",    (0,0), (-1,-1), 5),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("TOPPADDING",    (0,0), (-1,-1), 5*S),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5*S),
         ("LEFTPADDING",   (0,0), (-1,-1), 6),
     ]))
     story.append(info_table)
@@ -310,18 +323,19 @@ def _build_combined_report_pdf(student):
             str(end_details["aggregate"]) if end_details else "-",
         ])
 
-    subj_table = Table(subj_data, colWidths=[5*cm, 3*cm, 2.5*cm, 3*cm, 2.5*cm], repeatRows=1)
+    subj_table = Table(subj_data, colWidths=[4.4*cm, 3.6*cm, 3.2*cm, 3.4*cm, 3.2*cm], repeatRows=1)
     subj_table.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,0),  BLUE),
         ("TEXTCOLOR",     (0,0), (-1,0),  WHITE),
         ("FONTNAME",      (0,0), (-1,0),  "Helvetica-Bold"),
         ("FONTNAME",      (0,1), (-1,-1), "Helvetica"),
-        ("FONTSIZE",      (0,0), (-1,-1), 9),
+        ("FONTSIZE",      (0,0), (-1,-1), 9*S),
         ("GRID",          (0,0), (-1,-1), 0.5, colors.HexColor("#dbeafe")),
         ("ROWBACKGROUNDS",(0,1), (-1,-1), [WHITE, PALE]),
         ("ALIGN",         (1,0), (-1,-1), "CENTER"),
-        ("TOPPADDING",    (0,0), (-1,-1), 5),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("TOPPADDING",    (0,0), (-1,-1), 5*S),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 5*S),
         ("LEFTPADDING",   (0,0), (0,-1),  6),
     ]))
     story.append(subj_table)
@@ -334,35 +348,22 @@ def _build_combined_report_pdf(student):
     end_agg      = end_computed["aggregate_sum"] if end_computed else "-"
     end_div      = end_computed["division"] if end_computed else "-"
 
-    summary_data = [[
-        Paragraph("<b><font color='#93c5fd' size=12>Pre-End</font></b>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{preend_total}</font></b><br/>"
-                  f"<font color='white' size=8>Total</font>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{preend_agg}</font></b><br/>"
-                  f"<font color='white' size=8>Aggregate</font>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{preend_div}</font></b><br/>"
-                  f"<font color='white' size=8>Division</font>",
-                  ParagraphStyle("s", alignment=1)),
-    ],[
-        Paragraph("<b><font color='#93c5fd' size=12>End of Term</font></b>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{end_total}</font></b><br/>"
-                  f"<font color='white' size=8>Total</font>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{end_agg}</font></b><br/>"
-                  f"<font color='white' size=8>Aggregate</font>",
-                  ParagraphStyle("s", alignment=1)),
-        Paragraph(f"<b><font color='#93c5fd' size=14>{end_div}</font></b><br/>"
-                  f"<font color='white' size=8>Division</font>",
-                  ParagraphStyle("s", alignment=1)),
-    ]]
+    def stat(value, label):
+        return Paragraph(f"<b><font color='#93c5fd' size='{14*S:.1f}'>{value}</font></b><br/>"
+                         f"<font color='white' size='{8*S:.1f}'>{label}</font>", stat_style)
+
+    def row_title(text):
+        return Paragraph(f"<b><font color='#93c5fd' size='{12*S:.1f}'>{text}</font></b>", stat_style)
+
+    summary_data = [
+        [row_title("Pre-End"),     stat(preend_total, "Total"), stat(preend_agg, "Aggregate"), stat(preend_div, "Division")],
+        [row_title("End of Term"), stat(end_total, "Total"),    stat(end_agg, "Aggregate"),    stat(end_div, "Division")],
+    ]
     summary_table = Table(summary_data, colWidths=[4.5*cm, 4.5*cm, 4.5*cm, 4.5*cm])
     summary_table.setStyle(TableStyle([
         ("BACKGROUND",    (0,0), (-1,-1), NAVY),
         ("ALIGN",         (0,0), (-1,-1), "CENTER"),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
         ("TOPPADDING",    (0,0), (-1,-1), 10),
         ("BOTTOMPADDING", (0,0), (-1,-1), 10),
     ]))
@@ -371,7 +372,7 @@ def _build_combined_report_pdf(student):
 
     best_computed = end_computed or preend_computed
     story.append(Paragraph("CLASS TEACHER'S COMMENT", section_style))
-    story.append(Paragraph(best_computed["comment"], comment_style))
+    story.append(Paragraph(escape(best_computed["comment"]), comment_style))
     story.append(Spacer(1, 0.5*cm))
 
     sig_table = Table(
@@ -379,7 +380,7 @@ def _build_combined_report_pdf(student):
         colWidths=[9*cm, 9*cm])
     sig_table.setStyle(TableStyle([
         ("FONTNAME",    (0,0), (-1,-1), "Helvetica"),
-        ("FONTSIZE",    (0,0), (-1,-1), 8),
+        ("FONTSIZE",    (0,0), (-1,-1), 8*S),
         ("TEXTCOLOR",   (0,0), (-1,-1), BLUE),
         ("LINEABOVE",   (0,0), (-1,-1), 0.5, BLUE),
         ("ALIGN",       (0,0), (-1,-1), "CENTER"),
@@ -396,7 +397,7 @@ def _content_height(flowables, width):
     return sum(fl.wrap(width, 10000)[1] for fl in flowables)
 
 
-def _a5_report_flowables(student, computed, exam_type, width, p, f=0.95):
+def _a5_report_flowables(student, computed, exam_type, width, p, f=1.2):
     """
     One report card laid out for an A5 half-sheet.
     f = font scale (fixed), p = vertical spacing scale (bigger = more breathing room).
@@ -451,7 +452,7 @@ def _a5_report_flowables(student, computed, exam_type, width, p, f=0.95):
         [Paragraph("Class Teacher", label_style), Paragraph(escape(teacher.full_name), value_style),
          Paragraph("Exam Type", label_style),     Paragraph(escape(exam_type), value_style)],
     ]
-    info_table = Table(info_data, colWidths=[width*0.21, width*0.29, width*0.21, width*0.29])
+        info_table = Table(info_data, colWidths=[width*0.22, width*0.28, width*0.22, width*0.28])
     info_table.setStyle(TableStyle([
         ("BACKGROUND",    (0, 0), (-1, -1), PALE),
         ("GRID",          (0, 0), (-1, -1), 0.5, LINE),
@@ -465,8 +466,8 @@ def _a5_report_flowables(student, computed, exam_type, width, p, f=0.95):
     subj_data = [["Subject", "Marks (/100)", "Grade", "Agg.", "Remark"]]
     for subj, d in computed["subjects"].items():
         subj_data.append([subj, str(d["mark"]), d["grade"], str(d["aggregate"]), d["remark"]])
-    subj_table = Table(subj_data, colWidths=[width*0.30, width*0.20, width*0.13,
-                                             width*0.12, width*0.25])
+         subj_table = Table(subj_data, colWidths=[width*0.26, width*0.25, width*0.13,
+                                             width*0.12, width*0.24])
     subj_table.setStyle(TableStyle([
         ("BACKGROUND",     (0, 0), (-1, 0),  BLUE),
         ("TEXTCOLOR",      (0, 0), (-1, 0),  WHITE),

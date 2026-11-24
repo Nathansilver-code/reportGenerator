@@ -452,7 +452,7 @@ def _a5_report_flowables(student, computed, exam_type, width, p, f=1.2):
         [Paragraph("Class Teacher", label_style), Paragraph(escape(teacher.full_name), value_style),
          Paragraph("Exam Type", label_style),     Paragraph(escape(exam_type), value_style)],
     ]
-        info_table = Table(info_data, colWidths=[width*0.22, width*0.28, width*0.22, width*0.28])
+    info_table = Table(info_data, colWidths=[width*0.22, width*0.28, width*0.22, width*0.28])
     info_table.setStyle(TableStyle([
         ("BACKGROUND",    (0, 0), (-1, -1), PALE),
         ("GRID",          (0, 0), (-1, -1), 0.5, LINE),

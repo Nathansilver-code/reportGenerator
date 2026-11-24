@@ -466,7 +466,7 @@ def _a5_report_flowables(student, computed, exam_type, width, p, f=1.2):
     subj_data = [["Subject", "Marks (/100)", "Grade", "Agg.", "Remark"]]
     for subj, d in computed["subjects"].items():
         subj_data.append([subj, str(d["mark"]), d["grade"], str(d["aggregate"]), d["remark"]])
-         subj_table = Table(subj_data, colWidths=[width*0.26, width*0.25, width*0.13,
+        subj_table = Table(subj_data, colWidths=[width*0.26, width*0.25, width*0.13,
                                              width*0.12, width*0.24])
     subj_table.setStyle(TableStyle([
         ("BACKGROUND",     (0, 0), (-1, 0),  BLUE),

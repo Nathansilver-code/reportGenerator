@@ -59,13 +59,13 @@ def get_grade(mark, max_mark=100, class_name=None):
             return {"grade": "D1", "aggregate": 1, "remark": "Excellent"}
         elif percentage >= 80:
             return {"grade": "D2", "aggregate": 2, "remark": "Very Good"}
-        elif percentage >= 75:
-            return {"grade": "C3", "aggregate": 3, "remark": "Good"}
         elif percentage >= 70:
-            return {"grade": "C4", "aggregate": 4, "remark": "Fair"}
+            return {"grade": "C3", "aggregate": 3, "remark": "Good"}
         elif percentage >= 60:
-            return {"grade": "C5", "aggregate": 5, "remark": "Pass"}
+            return {"grade": "C4", "aggregate": 4, "remark": "Fair"}
         elif percentage >= 55:
+            return {"grade": "C5", "aggregate": 5, "remark": "Pass"}
+        elif percentage >= 50:
             return {"grade": "C6", "aggregate": 6, "remark": "Pass"}
         elif percentage >= 45:
             return {"grade": "P7", "aggregate": 7, "remark": "Weak Pass"}
@@ -114,13 +114,13 @@ def get_division(total_marks, class_name=None):
             return "F"
     elif class_name in LOWER_PRIMARY_ONLY:
         # P1 & P2 division boundaries
-        if total_marks >= 510:
+        if total_marks >= 480:
             return "1"
-        elif total_marks >= 480:
+        elif total_marks >= 400:
             return "2"
-        elif total_marks >= 450:
+        elif total_marks >= 300:
             return "3"
-        elif total_marks >= 420:
+        elif total_marks >= 250:
             return "4"
         else:
             return "F"
